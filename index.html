@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTG Pod Stats</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚔️ Pod Tracker</h1>
+        </header>
+
+        <section class="card add-deck-form">
+            <h2>Add New Deck</h2>
+            <div class="input-group">
+                <input type="text" id="playerName" placeholder="Player Name (e.g. Steve)">
+                <input type="text" id="deckName" placeholder="Deck Name (e.g. Goblins)">
+                <button id="addBtn">Add to Roster</button>
+            </div>
+        </section>
+
+        <section>
+            <h2>Standings</h2>
+            <div id="loading">Loading data...</div>
+            <ul id="deckList" class="deck-list">
+                </ul>
+        </section>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
