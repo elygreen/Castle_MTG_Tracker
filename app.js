@@ -144,62 +144,38 @@ document.getElementById('toggleTagsBtn').onclick = () => {
 
 document.getElementById('addParticipantBtn').onclick = () => {
     const row = document.createElement('div');
-    row.className = 'card participant-row';
+    row.className = 'card';
     row.style.background = 'rgba(0,0,0,0.2)';
     row.innerHTML = `
         <div class="participant-header">
-            <div class="header-top-row">
-                <label class="won-toggle">
-                    <input type="radio" name="winner" class="p-win" style="display:none">
-                    WON
-                </label>
-                <div class="ko-badge" title="Player Knockouts">
-                    <span>KO'S</span>
-                    <input type="number" class="p-kills" value="0" min="0" max="9">
-                </div>
-                <button onclick="this.parentElement.parentElement.parentElement.remove()" style="background:none; color:var(--danger); font-size:1rem; cursor:pointer; padding: 0 4px;">✕</button>
+            <label class="won-toggle">
+                <input type="radio" name="winner" class="p-win" style="display:none">
+                🏆 WON
+            </label>
+            
+            <select class="p-deck" style="margin:0; flex:1; font-size: 11px;">
+                ${allDecks.map(d => `<option value="${d.id}">${d.player}: ${d.deckName}</option>`).join('')}
+            </select>
+
+            <div class="ko-badge" title="Player Knockouts">
+                <span>💀 KO'S</span>
+                <input type="number" class="p-kills" value="0" min="0">
             </div>
-            <div class="header-select-row">
-                <select class="p-player-select">
-                    <option value="" disabled selected>Select Player...</option>
-                    ${allPlayers.map(p => `<option value="${p}">${p}</option>`).join('')}
-                </select>
-                <select class="p-deck-select">
-                    <option value="" disabled selected>Select Deck...</option>
-                </select>
-            </div>
+
+            <button onclick="this.parentElement.parentElement.remove()" style="background:none; color:var(--danger); padding:0; font-size:1rem; cursor:pointer;">✕</button>
         </div>
 
         <div style="display:flex; flex-wrap:wrap; gap:4px;">
             <label class="stat-pill pill-sol"><input type="checkbox" class="p-sol"> Sol Ring</label>
             <label class="stat-pill pill-blood"><input type="checkbox" class="p-blood"> Blood</label>
-            <label class="stat-pill pill-ramp"><input type="checkbox" class="p-ramp"> Most Ramp</label>
-            <label class="stat-pill pill-draw"><input type="checkbox" class="p-draw"> Most Draw</label>
+            <label class="stat-pill pill-ramp"><input type="checkbox" class="p-ramp"> Ramp</label>
+            <label class="stat-pill pill-draw"><input type="checkbox" class="p-draw"> Draw</label>
             <label class="stat-pill pill-first"><input type="checkbox" class="p-first"> 1st</label>
             <label class="stat-pill pill-last"><input type="checkbox" class="p-last"> Last</label>
             <label class="stat-pill pill-fun"><input type="checkbox" class="p-fun"> Fun</label>
             <label class="stat-pill pill-impact"><input type="checkbox" class="p-impact"> Impact</label>
         </div>
     `;
-
-    const playerSel = row.querySelector('.p-player-select');
-    const deckSel = row.querySelector('.p-deck-select');
-
-    playerSel.onchange = () => {
-        const selectedPlayer = playerSel.value;
-        const filteredDecks = allDecks.filter(d => d.player === selectedPlayer);
-        
-        // Reset deck selection
-        deckSel.innerHTML = '<option value="" disabled selected>Select Deck...</option>';
-        
-        filteredDecks.forEach(d => {
-            const opt = document.createElement('option');
-            opt.value = d.id;
-            opt.textContent = d.deckName;
-            deckSel.appendChild(opt);
-        });
-    };
-
     document.getElementById('gameParticipants').appendChild(row);
 };
 
@@ -208,8 +184,7 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     if (rows.length < 2) return alert("Select at least 2 decks!");
     const batch = writeBatch(db);
     rows.forEach(row => {
-        const id = row.querySelector('.p-deck-select').value;
-        if (!id) return;
+        const id = row.querySelector('.p-deck').value;
         const win = row.querySelector('.p-win').checked;
         batch.update(doc(db, "decks", id), {
             wins: increment(win ? 1 : 0),
