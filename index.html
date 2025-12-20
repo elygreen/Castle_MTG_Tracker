@@ -3,32 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MTG Pod Stats</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>MTG Pod Tracker</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
+    <div class="container" style="max-width: 950px;">
         <header>
             <h1>⚔️ Pod Tracker</h1>
         </header>
 
-        <section class="card add-deck-form">
-            <h2>Add New Deck</h2>
-            <div class="input-group">
-                <input type="text" id="playerName" placeholder="Player Name (e.g. Steve)">
-                <input type="text" id="deckName" placeholder="Deck Name (e.g. Goblins)">
-                <button id="addBtn">Add to Roster</button>
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="record">Record Match</button>
+            <button class="tab-btn" data-tab="view">Standings</button>
+            <button class="tab-btn" data-tab="manage">Database</button>
+        </nav>
+
+        <div id="record" class="tab-content active">
+            <section class="card">
+                <h2>New Match</h2>
+                <div id="gameParticipants" class="participants-grid"></div>
+                <div style="display: flex; gap: 10px; margin-top: 5px;">
+                    <button id="addParticipantBtn" style="background-color: var(--surface); flex: 1; border: 1px solid var(--border);">+ Add Player</button>
+                    <button id="submitMatchBtn" style="background-color: var(--success); color: white; flex: 1.5;">Submit Results</button>
+                </div>
+            </section>
+        </div>
+
+        <div id="view" class="tab-content">
+            <section>
+                <h2>Leaderboard</h2>
+                <div id="loading">Syncing with multiverses...</div>
+                <ul id="deckList" style="list-style: none; padding: 0;"></ul>
+            </section>
+        </div>
+
+        <div id="manage" class="tab-content">
+            <div class="manage-grid">
+                <div class="manage-col">
+                    <section class="card">
+                        <h2>Add Player</h2>
+                        <div class="input-group">
+                            <input type="text" id="newPlayerName" placeholder="Name (e.g. Ely)">
+                            <button id="addPlayerBtn">Register</button>
+                        </div>
+                    </section>
+
+                    <section class="card">
+                        <h2>Add Deck</h2>
+                        <div class="input-group" style="flex-direction: column;">
+                            <select id="playerSelect">
+                                <option value="" disabled selected>Owner...</option>
+                            </select>
+                            <input type="text" id="deckName" placeholder="Deck Title" style="margin-bottom: 10px;">
+                            <button id="toggleTagsBtn" type="button" class="btn-blue">+ Add Tags</button>
+                            <div id="tagSelectorContainer" class="tag-selector-hidden">
+                                <div id="tagSelector" class="tag-selector-grid">
+                                    <label class="tag-checkbox"><input type="checkbox" value="Aggro"> Aggro</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Aristocrats"> Aristocrats</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Artifacts"> Artifacts</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Big Mana"> Big Mana</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Blink"> Blink</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Burn"> Burn</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Combo"> Combo</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Control"> Control</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Group Hug"> Group Hug</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Lands"> Lands</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Lifegain"> Lifegain</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Midrange"> Midrange</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Mill"> Mill</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Reanimator"> Reanimator</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Spellslinger"> Spellslinger</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Stax"> Stax</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Tokens"> Tokens</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Tribal"> Tribal</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="Voltron"> Voltron</label>
+                                    <label class="tag-checkbox"><input type="checkbox" value="+1/+1 Counters"> +1/+1 Counters</label>
+                                </div>
+                            </div>
+                            <button id="addDeckBtn" class="btn-green" style="margin-top: 15px;">Save Deck</button>
+                        </div>
+                    </section>
+                </div>
+                <div class="manage-col">
+                    <section class="card roster-card">
+                        <h2>Player Roster</h2>
+                        <div id="rosterTabs" class="roster-tabs"></div>
+                        <div id="rosterDeckList" class="roster-deck-view">
+                            <p style="color: var(--text-dim); font-size: 0.8rem; text-align: center;">Select a player to view their decks.</p>
+                        </div>
+                    </section>
+                </div>
             </div>
-        </section>
-
-        <section>
-            <h2>Standings</h2>
-            <div id="loading">Loading data...</div>
-            <ul id="deckList" class="deck-list">
-                </ul>
-        </section>
+        </div>
     </div>
-
     <script type="module" src="app.js"></script>
 </body>
 </html>
