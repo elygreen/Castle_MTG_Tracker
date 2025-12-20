@@ -29,21 +29,38 @@ const rosterDeckView = document.getElementById('rosterDeckList');
 
 // --- 1. Listeners ---
 onSnapshot(query(collection(db, "players"), orderBy("name", "asc")), (snapshot) => {
-    allPlayers = snapshot.docs.map(doc => doc.data().name);
+    const rawPlayers = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
+    allPlayers = rawPlayers.map(p => p.name);
     playerSelect.innerHTML = '<option value="" disabled selected>Owner...</option>';
     rosterTabs.innerHTML = '';
-    allPlayers.forEach(name => {
-        playerSelect.innerHTML += `<option value="${name}">${name}</option>`;
+    
+    rawPlayers.forEach(p => {
+        playerSelect.innerHTML += `<option value="${p.name}">${p.name}</option>`;
+        
+        const container = document.createElement('div');
+        container.className = 'player-tab-container';
+        
         const btn = document.createElement('button');
-        btn.className = `roster-tab-btn ${selectedRosterPlayer === name ? 'active' : ''}`;
-        btn.textContent = name;
+        btn.className = `roster-tab-btn ${selectedRosterPlayer === p.name ? 'active' : ''}`;
+        btn.textContent = p.name;
         btn.onclick = () => {
-            selectedRosterPlayer = name;
+            selectedRosterPlayer = p.name;
             updateRosterView();
             document.querySelectorAll('.roster-tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         };
-        rosterTabs.appendChild(btn);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'player-del-btn';
+        delBtn.textContent = '✕';
+        delBtn.onclick = (e) => {
+            e.stopPropagation();
+            deletePlayer(p.id, p.name);
+        };
+
+        container.appendChild(btn);
+        container.appendChild(delBtn);
+        rosterTabs.appendChild(container);
     });
 });
 
@@ -81,7 +98,6 @@ onSnapshot(query(collection(db, "decks"), orderBy("wins", "desc")), (snapshot) =
                 <div class="stat-item">💖 <b>${deck.funCount || 0}</b></div>
                 <div class="stat-item">⚡ <b>${deck.impactCount || 0}</b></div>
             </div>
-            <button class="del-btn" onclick="deleteDeck('${deck.id}')">Delete Deck</button>
         `;
         deckList.appendChild(li);
     });
@@ -101,7 +117,15 @@ function updateRosterView() {
         const li = document.createElement('li');
         li.className = 'roster-deck-item';
         const tagSpans = (d.deckTags || []).map(tag => `<span class="roster-tag-orange">${tag}</span>`).join('');
-        li.innerHTML = `<div style="font-weight: 700;">${d.deckName}</div><div class="roster-tag-container">${tagSpans}</div>`;
+        li.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div style="font-weight: 700;">${d.deckName}</div>
+                    <div class="roster-tag-container">${tagSpans}</div>
+                </div>
+                <button class="delete-btn-sm" onclick="deleteDeck('${d.id}', '${d.deckName}')">Delete</button>
+            </div>
+        `;
         ul.appendChild(li);
     });
     rosterDeckView.appendChild(ul);
@@ -150,16 +174,23 @@ document.getElementById('addParticipantBtn').onclick = () => {
         <div class="participant-header">
             <label class="won-toggle">
                 <input type="radio" name="winner" class="p-win" style="display:none">
-                🏆 WON
+                WON
             </label>
             
-            <select class="p-deck" style="margin:0; flex:1; font-size: 11px;">
-                ${allDecks.map(d => `<option value="${d.id}">${d.player}: ${d.deckName}</option>`).join('')}
-            </select>
+            <div style="display: flex; gap: 4px; flex: 2;">
+                <select class="p-owner" style="margin:0; flex:1; font-size: 11px;">
+                    <option value="" disabled selected>Player...</option>
+                    ${allPlayers.map(p => `<option value="${p}">${p}</option>`).join('')}
+                </select>
+
+                <select class="p-deck" style="margin:0; flex:1.5; font-size: 11px;">
+                    <option value="" disabled selected>Select Deck...</option>
+                </select>
+            </div>
 
             <div class="ko-badge" title="Player Knockouts">
-                <span>💀 KO'S</span>
-                <input type="number" class="p-kills" value="0" min="0">
+                <span>KO'S</span>
+                <input type="number" class="p-kills" value="0" min="0" max="9">
             </div>
 
             <button onclick="this.parentElement.parentElement.remove()" style="background:none; color:var(--danger); padding:0; font-size:1rem; cursor:pointer;">✕</button>
@@ -168,14 +199,24 @@ document.getElementById('addParticipantBtn').onclick = () => {
         <div style="display:flex; flex-wrap:wrap; gap:4px;">
             <label class="stat-pill pill-sol"><input type="checkbox" class="p-sol"> Sol Ring</label>
             <label class="stat-pill pill-blood"><input type="checkbox" class="p-blood"> Blood</label>
-            <label class="stat-pill pill-ramp"><input type="checkbox" class="p-ramp"> Ramp</label>
-            <label class="stat-pill pill-draw"><input type="checkbox" class="p-draw"> Draw</label>
+            <label class="stat-pill pill-ramp"><input type="checkbox" class="p-ramp"> Most Ramp</label>
+            <label class="stat-pill pill-draw"><input type="checkbox" class="p-draw"> Most Draw</label>
             <label class="stat-pill pill-first"><input type="checkbox" class="p-first"> 1st</label>
             <label class="stat-pill pill-last"><input type="checkbox" class="p-last"> Last</label>
             <label class="stat-pill pill-fun"><input type="checkbox" class="p-fun"> Fun</label>
             <label class="stat-pill pill-impact"><input type="checkbox" class="p-impact"> Impact</label>
         </div>
     `;
+
+    const ownerSelect = row.querySelector('.p-owner');
+    const deckSelect = row.querySelector('.p-deck');
+
+    ownerSelect.onchange = () => {
+        const filteredDecks = allDecks.filter(d => d.player === ownerSelect.value);
+        deckSelect.innerHTML = '<option value="" disabled selected>Select Deck...</option>' + 
+            filteredDecks.map(d => `<option value="${d.id}">${d.deckName}</option>`).join('');
+    };
+
     document.getElementById('gameParticipants').appendChild(row);
 };
 
@@ -186,6 +227,7 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     rows.forEach(row => {
         const id = row.querySelector('.p-deck').value;
         const win = row.querySelector('.p-win').checked;
+        if (!id) return;
         batch.update(doc(db, "decks", id), {
             wins: increment(win ? 1 : 0),
             losses: increment(win ? 0 : 1),
@@ -205,7 +247,21 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     alert("Match Recorded!");
 };
 
-window.deleteDeck = async (id) => { if(confirm("Delete?")) await deleteDoc(doc(db, "decks", id)); };
+window.deleteDeck = async (id, name) => {
+    if(confirm(`Are you sure you want to delete the deck "${name}"?`)) {
+        await deleteDoc(doc(db, "decks", id));
+    }
+};
+
+async function deletePlayer(id, name) {
+    if(confirm(`Are you sure you want to delete player "${name}"? This will not delete their decks automatically.`)) {
+        await deleteDoc(doc(db, "players", id));
+        if (selectedRosterPlayer === name) {
+            selectedRosterPlayer = null;
+            rosterDeckView.innerHTML = '<p style="color: var(--text-dim); font-size: 0.8rem; text-align: center;">Select a player to view their decks.</p>';
+        }
+    }
+}
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.onclick = () => {
