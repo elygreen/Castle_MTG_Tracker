@@ -56,6 +56,23 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
 .manage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
 @media (max-width: 768px) { .manage-grid { grid-template-columns: 1fr; } }
 
+/* Player Tabs with Dynamic Colors */
+.player-tab-container { display: flex; align-items: center; gap: 4px; margin-bottom: 5px; }
+.roster-tab-btn { flex: 1; text-align: left; border: 1px solid var(--border); background: var(--bg); color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+.roster-tab-btn.active { background: rgba(255,255,255,0.05); transform: translateX(5px); }
+.player-del-btn { background: none; color: var(--danger); padding: 5px; font-size: 12px; cursor: pointer; }
+
+/* Tag Grid Layout */
+.deck-tags-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.individual-tag {
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 .participants-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
 @media (max-width: 600px) { .participants-grid { grid-template-columns: 1fr; } }
 
@@ -72,37 +89,36 @@ button:active { transform: scale(0.96); }
 .history-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 15px; margin-bottom: 12px; }
 .history-header { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 10px; }
 .history-date { font-size: 0.7rem; color: var(--text-dim); font-weight: 800; }
-.history-participant { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+.history-participant { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 8px 10px; 
+    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.05); 
+}
 .history-participant:last-child { border-bottom: none; }
-.history-deck-info { display: flex; flex-direction: column; }
-.history-player-name { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; }
+
+.history-participant.winner-row { 
+    background: rgba(46, 125, 50, 0.15); 
+    border-left: 4px solid var(--success); 
+    border-bottom: none; 
+    border-radius: 4px;
+}
+
+.history-deck-info { display: flex; flex-direction: column; flex: 1; }
+.history-player-name { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800; }
 .history-deck-name { font-size: 0.9rem; font-weight: 700; }
-.history-stats { display: flex; gap: 4px; }
+.history-stats { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: flex-end; max-width: 250px; }
 
-/* Existing Badges/Pills */
-.roster-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 15px; }
-.player-tab-container { display: flex; align-items: center; background: var(--border); border-radius: 6px; overflow: hidden; }
-.roster-tab-btn { padding: 6px 12px; font-size: 0.75rem; background: transparent; color: var(--text-dim); border: none; cursor: pointer; }
-.roster-tab-btn.active { background: var(--accent); color: white; }
-.player-del-btn { background: rgba(211, 47, 47, 0.1); color: var(--danger); border: none; padding: 6px 8px; font-size: 0.7rem; cursor: pointer; border-left: 1px solid rgba(255,255,255,0.05); }
-.player-del-btn:hover { background: var(--danger); color: white; }
-.roster-deck-view { background: #121416; padding: 15px; border-radius: 8px; min-height: 100px; border: 1px solid var(--border); }
-.roster-list { padding-left: 0; list-style: none; margin: 0; color: var(--text-main); }
-.roster-deck-item { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-.delete-btn-sm { background: transparent; color: var(--danger); font-size: 0.65rem; padding: 4px 8px; border: 1px solid var(--danger); opacity: 0.6; }
-.delete-btn-sm:hover { opacity: 1; background: var(--danger); color: white; }
-.roster-tag-orange { font-size: 0.6rem; background: var(--mtg-orange); color: white; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; font-weight: 800; }
+.edit-btn-sm {
+    background: transparent; border: 1px solid var(--border); color: var(--text-dim);
+    font-size: 0.6rem; padding: 2px 8px; border-radius: 4px;
+}
+.edit-btn-sm:hover { color: white; border-color: var(--accent); }
 
-.tag-selector-hidden { display: none; }
-.tag-selector-visible { display: block; animation: fadeIn 0.2s ease-in-out; }
-.tag-selector-grid { display: flex; flex-wrap: wrap; gap: 10px; background: #121416; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-top: 5px; }
-.tag-checkbox { font-size: 0.7rem; color: var(--text-dim); display: flex; align-items: center; gap: 6px; cursor: pointer; }
-
-.deck-card { background: var(--surface); border: 1px solid var(--border); padding: 12px; border-radius: var(--radius); margin-bottom: 10px; }
-.deck-header { display: flex; justify-content: space-between; align-items: flex-start; }
-.deck-tag { font-size: 0.55rem; background: var(--border); color: var(--text-dim); padding: 1px 6px; border-radius: 4px; text-transform: uppercase; }
-.win-rate { background: rgba(46, 125, 50, 0.2); color: #4caf50; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; }
-
+/* Leaderboard Stat Badges */
 .stat-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; }
 .stat-badge-pill { font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; color: white; font-weight: 800; display: flex; gap: 4px; }
 .stat-badge-pill b { color: white; }
@@ -132,3 +148,9 @@ button:active { transform: scale(0.96); }
 .ko-badge input { width: 25px; background: transparent; border: none; color: white; font-weight: 800; padding: 0; text-align: center; margin: 0; }
 .ko-badge input::-webkit-outer-spin-button, .ko-badge input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .ko-badge input[type=number] { -moz-appearance: textfield; }
+
+/* Tag Selector specific */
+.tag-selector-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; }
+.tag-checkbox { font-size: 0.7rem; color: var(--text-dim); display: flex; align-items: center; gap: 5px; }
+.tag-selector-hidden { display: none; }
+.tag-selector-visible { display: block; }
