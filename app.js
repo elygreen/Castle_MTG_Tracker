@@ -116,29 +116,34 @@ onSnapshot(query(collection(db, "decks"), orderBy("wins", "desc")), (snapshot) =
         const rate = total > 0 ? ((deck.wins / total) * 100).toFixed(0) : 0;
         const tags = deck.deckTags || [];
         const li = document.createElement('li');
-        li.className = 'deck-card';
+        li.className = 'deck-card-container';
         li.innerHTML = `
-            <div class="deck-header">
-                <div>
-                    <h3 style="margin:0; font-size:1rem;">${deck.deckName}</h3>
-                    <div style="color:${getPlayerColor(deck.player)}; font-size:0.75rem; margin-top:4px; font-weight:800; text-transform:uppercase;">${deck.player}</div>
-                    <div class="deck-tags-grid">
-                        ${tags.map(t => `<span class="individual-tag" style="${getTagStyle(t)}">${t}</span>`).join('')}
+            <div class="deck-card">
+                <div class="deck-header">
+                    <div>
+                        <h3 style="margin:0; font-size:1.1rem;">${deck.deckName}</h3>
+                        <div style="color:${getPlayerColor(deck.player)}; font-size:0.75rem; margin-top:2px; font-weight:800; text-transform:uppercase; letter-spacing: 0.5px;">${deck.player}</div>
+                        <div class="deck-tags-grid">
+                            ${tags.map(t => `<span class="individual-tag" style="${getTagStyle(t)}">${t}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="win-rate-badge">
+                        <span class="win-rate-val">${rate}%</span>
+                        <span class="win-rate-label">WIN RATE</span>
                     </div>
                 </div>
-                <div class="win-rate">${rate}% Win</div>
-            </div>
-            <div class="stat-badges">
-                <div class="stat-badge-pill pill-won">WON <b>${deck.wins || 0}</b></div>
-                <div class="stat-badge-pill pill-kos">KOS <b>${deck.knockouts || 0}</b></div>
-                <div class="stat-badge-pill pill-sol">SOL <b>${deck.solRingOpening || 0}</b></div>
-                <div class="stat-badge-pill pill-blood">BLD <b>${deck.firstBloodCount || 0}</b></div>
-                <div class="stat-badge-pill pill-ramp">RMP <b>${deck.mostRampCount || 0}</b></div>
-                <div class="stat-badge-pill pill-draw">DRW <b>${deck.mostDrawCount || 0}</b></div>
-                <div class="stat-badge-pill pill-first">1ST <b>${deck.wentFirstCount || 0}</b></div>
-                <div class="stat-badge-pill pill-last">LST <b>${deck.wentLastCount || 0}</b></div>
-                <div class="stat-badge-pill pill-fun">FUN <b>${deck.funCount || 0}</b></div>
-                <div class="stat-badge-pill pill-impact">IMP <b>${deck.impactCount || 0}</b></div>
+                <div class="stat-badges">
+                    <div class="stat-badge-pill pill-won">WON <b>${deck.wins || 0}</b></div>
+                    <div class="stat-badge-pill pill-kos">KOS <b>${deck.knockouts || 0}</b></div>
+                    <div class="stat-badge-pill pill-sol">SOL <b>${deck.solRingOpening || 0}</b></div>
+                    <div class="stat-badge-pill pill-blood">BLD <b>${deck.firstBloodCount || 0}</b></div>
+                    <div class="stat-badge-pill pill-ramp">RMP <b>${deck.mostRampCount || 0}</b></div>
+                    <div class="stat-badge-pill pill-draw">DRW <b>${deck.mostDrawCount || 0}</b></div>
+                    <div class="stat-badge-pill pill-first">1ST <b>${deck.wentFirstCount || 0}</b></div>
+                    <div class="stat-badge-pill pill-last">LST <b>${deck.wentLastCount || 0}</b></div>
+                    <div class="stat-badge-pill pill-fun">FUN <b>${deck.funCount || 0}</b></div>
+                    <div class="stat-badge-pill pill-impact">IMP <b>${deck.impactCount || 0}</b></div>
+                </div>
             </div>
         `;
         deckList.appendChild(li);
@@ -213,9 +218,9 @@ function updateRosterView() {
         const li = document.createElement('li');
         li.className = 'roster-deck-item';
         li.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <div style="font-weight: 700;">${d.deckName}</div>
+            <div class="roster-deck-content">
+                <div class="roster-deck-info">
+                    <div class="roster-deck-title">${d.deckName}</div>
                     <div class="deck-tags-grid">${(d.deckTags || []).map(t => `<span class="individual-tag" style="${getTagStyle(t)}">${t}</span>`).join('')}</div>
                 </div>
                 <button class="delete-btn-sm" onclick="handleDeckDeletionTrigger('${d.id}', '${d.deckName}', '${d.player}')">Delete</button>
