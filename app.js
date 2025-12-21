@@ -18,8 +18,16 @@ const db = getFirestore(app);
 
 // State
 let allDecks = [];
-let allPlayers = [];
+let allPlayers = []; 
 let selectedRosterPlayer = null;
+let selectedNewPlayerColor = "#3d85ff"; // Default
+
+const MODERN_COLORS = [
+    "#16171a", "#7f0622", "#d62411", "#ff8426", 
+    "#ffd100", "#f2f3ccff", "#ff80a4", "#ff2674",
+    "#94216a", "#5e1a83ff", "#234975", "#68aed4",
+    "#65c227ff", "#10d275", "#007899", "#311b55ff"
+];
 
 const deckList = document.getElementById('deckList');
 const playerSelect = document.getElementById('playerSelect');
@@ -34,23 +42,23 @@ const modalTitle = document.getElementById('modalTitle');
 const modalBody = document.getElementById('modalBody');
 const modalActions = document.getElementById('modalActions');
 
-// --- Helper: Dynamic Colors ---
+// --- Helpers ---
 const getPlayerColor = (name) => {
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return `hsl(${Math.abs(hash) % 360}, 70%, 70%)`;
+    const player = allPlayers.find(p => p.name === name);
+    return player ? player.color : "var(--accent)";
 };
 
 const TAG_COLORS = {
-    "Aggro": "#ff4444", "Aristocrats": "#9c27b0", "Artifacts": "#607d8b",
-    "Big Mana": "#4caf50", "Blink": "#00bcd4", "Burn": "#ff5722",
-    "Combo": "#ffeb3b", "Control": "#2196f3", "Group Hug": "#8bc34a",
-    "Lands": "#795548", "Lifegain": "#e91e63", "Midrange": "#ff9800",
-    "Mill": "#3f51b5", "Reanimator": "#212121", "Spellslinger": "#03a9f4",
-    "Stax": "#f44336", "Tokens": "#ffc107", "Tribal": "#cddc39",
-    "Voltron": "#673ab7", "+1/+1 Counters": "#009688"
+    "Aggro":        "#ff4444",     "Aristocrats":   "#9c27b0",
+    "Artifacts":    "#607d8b",      "Big Mana":     "#4caf50",
+    "Blink":        "#00bcd4",      "Burn":         "#ff5722",
+    "Combo":        "#ffeb3b",      "Control":      "#2196f3", 
+    "Group Hug":    "#8bc34a",      "Lands":        "#14a35cff",
+    "Lifegain":     "#fc79a4ff",      "Midrange":     "#ff9800",
+    "Mill":         "#3f51b5",      "Reanimator":   "#212121",
+    "Spellslinger": "#03a9f4",      "Stax":         "#856b69ff",
+    "Tokens":       "#ffc107",      "Tribal":       "#cddc39",
+    "Voltron":      "#ac0505ff",      "+1/+1 Counters": "#009688"
 };
 
 const getTagStyle = (tag) => {
@@ -58,9 +66,27 @@ const getTagStyle = (tag) => {
     return `background-color: ${color}22; color: ${color}; border: 1px solid ${color}44;`;
 };
 
-function openModal(title, body, actions) {
+function renderColorGrid(containerId, activeColor, onSelect) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = MODERN_COLORS.map(color => `
+        <div class="color-swatch ${color === activeColor ? 'active' : ''}" 
+             style="background-color: ${color}" 
+             data-color="${color}">
+        </div>
+    `).join('');
+
+    container.querySelectorAll('.color-swatch').forEach(swatch => {
+        swatch.onclick = () => {
+            container.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+            swatch.classList.add('active');
+            onSelect(swatch.dataset.color);
+        };
+    });
+}
+
+function openModal(title, bodyHtml, actions) {
     modalTitle.textContent = title;
-    modalBody.textContent = body;
+    modalBody.innerHTML = bodyHtml; 
     modalActions.innerHTML = ''; 
     actions.forEach(action => {
         const btn = document.createElement('button');
@@ -79,30 +105,39 @@ function closeModal() { customModal.classList.remove('active'); }
 
 // --- 1. Listeners ---
 onSnapshot(query(collection(db, "players"), orderBy("name", "asc")), (snapshot) => {
-    const rawPlayers = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
-    allPlayers = rawPlayers.map(p => p.name);
+    allPlayers = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name, color: doc.data().color || "#3d85ff" }));
     playerSelect.innerHTML = '<option value="" disabled selected>Owner...</option>';
     rosterTabs.innerHTML = '';
-    rawPlayers.forEach(p => {
+    
+    allPlayers.forEach(p => {
         playerSelect.innerHTML += `<option value="${p.name}">${p.name}</option>`;
         const container = document.createElement('div');
         container.className = 'player-tab-container';
         const btn = document.createElement('button');
         btn.className = `roster-tab-btn ${selectedRosterPlayer === p.name ? 'active' : ''}`;
         btn.textContent = p.name;
-        btn.style.borderColor = getPlayerColor(p.name);
+        btn.style.backgroundColor = p.color;
+        btn.style.borderColor = p.color;
         btn.onclick = () => {
             selectedRosterPlayer = p.name;
             updateRosterView();
             document.querySelectorAll('.roster-tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         };
+        const controls = document.createElement('div');
+        controls.className = 'player-controls';
+        const editBtn = document.createElement('button');
+        editBtn.className = 'player-edit-btn';
+        editBtn.innerHTML = '✏️';
+        editBtn.onclick = (e) => { e.stopPropagation(); handleEditPlayerTrigger(p.id, p.name, p.color); };
         const delBtn = document.createElement('button');
         delBtn.className = 'player-del-btn';
         delBtn.textContent = '✕';
         delBtn.onclick = (e) => { e.stopPropagation(); handlePlayerDeletion(p.id, p.name); };
+        controls.appendChild(editBtn);
+        controls.appendChild(delBtn);
         container.appendChild(btn);
-        container.appendChild(delBtn);
+        container.appendChild(controls);
         rosterTabs.appendChild(container);
     });
 });
@@ -157,7 +192,6 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
         const match = docSnap.data();
         const matchId = docSnap.id;
         const dateStr = match.timestamp ? match.timestamp.toDate().toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : 'Just now';
-        
         const card = document.createElement('div');
         card.className = 'history-card';
         card.innerHTML = `
@@ -231,12 +265,17 @@ function updateRosterView() {
     rosterDeckView.appendChild(ul);
 }
 
+// Initialize New Player Color Grid
+renderColorGrid('newPlayerColorGrid', selectedNewPlayerColor, (color) => {
+    selectedNewPlayerColor = color;
+});
+
 // --- 2. Actions ---
 document.getElementById('addPlayerBtn').onclick = async () => {
     const nameInput = document.getElementById('newPlayerName');
     const name = nameInput.value.trim();
-    if (!name || allPlayers.includes(name)) return;
-    await addDoc(collection(db, "players"), { name });
+    if (!name || allPlayers.some(p => p.name === name)) return;
+    await addDoc(collection(db, "players"), { name, color: selectedNewPlayerColor });
     await addDoc(collection(db, "decks"), {
         player: name, deckName: "Misc", deckTags: ["General"], wins: 0, losses: 0, 
         knockouts: 0, firstBloodCount: 0, mostRampCount: 0, 
@@ -251,11 +290,9 @@ document.getElementById('addDeckBtn').onclick = async () => {
     const deckNameInput = document.getElementById('deckName');
     const deckName = deckNameInput.value.trim();
     const checkedTags = Array.from(document.querySelectorAll('#tagSelector input:checked')).map(cb => cb.value);
-    
     if (!player || !deckName) return;
     if (deckName.toLowerCase() === 'misc') { alert("Cannot manually create 'Misc'."); return; }
     if (allDecks.some(d => d.player === player && d.deckName.toLowerCase() === deckName.toLowerCase())) return;
-
     await addDoc(collection(db, "decks"), {
         player, deckName, deckTags: checkedTags, wins: 0, losses: 0, 
         knockouts: 0, firstBloodCount: 0, mostRampCount: 0, 
@@ -276,7 +313,7 @@ document.getElementById('addParticipantBtn').onclick = () => {
             <div style="display: flex; gap: 4px; flex: 2;">
                 <select class="p-owner" style="margin:0; flex:1; font-size: 11px;">
                     <option value="" disabled selected>Player...</option>
-                    ${allPlayers.map(p => `<option value="${p}">${p}</option>`).join('')}
+                    ${allPlayers.map(p => `<option value="${p.name}">${p.name}</option>`).join('')}
                 </select>
                 <select class="p-deck" style="margin:0; flex:1.5; font-size: 11px;"><option value="" disabled selected>Select Deck...</option></select>
             </div>
@@ -311,16 +348,13 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     const hasWinner = Array.from(document.querySelectorAll('.p-win')).some(radio => radio.checked);
     if (!hasWinner) { alert("Please select a winner before submitting!"); return; }
     for (const row of rows) { if (!row.querySelector('.p-deck').value) { alert("Ensure every player has a deck selected."); return; } }
-
     const batch = writeBatch(db);
     const matchParticipants = [];
-
     rows.forEach(row => {
         const id = row.querySelector('.p-deck').value;
         const deckObj = allDecks.find(d => d.id === id);
         const win = row.querySelector('.p-win').checked;
         const kills = parseInt(row.querySelector('.p-kills').value) || 0;
-        
         matchParticipants.push({
             deckId: id, player: deckObj.player, deckName: deckObj.deckName, deckTags: deckObj.deckTags || [], win, kos: kills,
             sol: row.querySelector('.p-sol').checked, blood: row.querySelector('.p-blood').checked,
@@ -328,7 +362,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
             first: row.querySelector('.p-first').checked, last: row.querySelector('.p-last').checked,
             fun: row.querySelector('.p-fun').checked, impact: row.querySelector('.p-impact').checked
         });
-
         batch.update(doc(db, "decks", id), {
             wins: increment(win ? 1 : 0), losses: increment(win ? 0 : 1), knockouts: increment(kills),
             solRingOpening: increment(row.querySelector('.p-sol').checked ? 1 : 0),
@@ -341,14 +374,48 @@ document.getElementById('submitMatchBtn').onclick = async () => {
             impactCount: increment(row.querySelector('.p-impact').checked ? 1 : 0)
         });
     });
-
     await batch.commit();
     await addDoc(collection(db, "matches"), { timestamp: serverTimestamp(), participants: matchParticipants });
     document.getElementById('gameParticipants').innerHTML = '';
     alert("Match Recorded!");
 };
 
-// --- History Editing Logic ---
+window.handleEditPlayerTrigger = (id, name, color) => {
+    let tempEditColor = color;
+    const body = `
+        <div style="display:flex; flex-direction:column; gap:10px; text-align:left;">
+            <label style="font-size:0.75rem; color:var(--text-dim);">PLAYER NAME</label>
+            <input type="text" id="editPlayerName" value="${name}" style="margin:0;">
+            <label style="font-size:0.75rem; color:var(--text-dim); margin-top:10px;">PLAYER COLOR</label>
+            <div id="editPlayerColorGrid" class="modern-color-grid"></div>
+        </div>
+    `;
+    openModal(`Edit ${name}`, body, [
+        { label: "Save Changes", color: "var(--accent)", onClick: () => finalizePlayerUpdate(id, name, tempEditColor) }
+    ]);
+    renderColorGrid('editPlayerColorGrid', color, (c) => {
+        tempEditColor = c;
+    });
+};
+
+async function finalizePlayerUpdate(id, oldName, newColor) {
+    const newName = document.getElementById('editPlayerName').value.trim();
+    if (!newName) return;
+    const batch = writeBatch(db);
+    batch.update(doc(db, "players", id), { name: newName, color: newColor });
+    if (newName !== oldName) {
+        const decksToUpdate = allDecks.filter(d => d.player === oldName);
+        decksToUpdate.forEach(d => batch.update(doc(db, "decks", d.id), { player: newName }));
+    }
+    await batch.commit();
+}
+
+function handlePlayerDeletion(id, name) {
+    openModal(`Delete Player "${name}"?`, "This will remove the player but leave decks for history.", [
+        { label: "Confirm Delete", color: "var(--danger)", onClick: async () => await deleteDoc(doc(db, "players", id)) }
+    ]);
+}
+
 window.handleEditMatchTrigger = async (matchId) => {
     const matchSnap = await getDoc(doc(db, "matches", matchId));
     const match = matchSnap.data();
@@ -356,7 +423,7 @@ window.handleEditMatchTrigger = async (matchId) => {
         label: `${p.player} (${p.deckName})`, color: p.win ? "var(--success)" : "var(--surface)",
         onClick: () => finalizeMatchEdit(matchId, p.deckId || null, p.player, p.deckName)
     }));
-    openModal("Change Winner", "Select the actual winner. Stat totals (Wins/Losses) will be updated automatically.", actions);
+    openModal("Change Winner", "Select the actual winner. Stat totals will update automatically.", actions);
 };
 
 async function finalizeMatchEdit(matchId, newWinnerDeckId, playerName, deckName) {
@@ -364,29 +431,16 @@ async function finalizeMatchEdit(matchId, newWinnerDeckId, playerName, deckName)
     const matchRef = doc(db, "matches", matchId);
     const matchSnap = await getDoc(matchRef);
     const matchData = matchSnap.data();
-
     const oldWinner = matchData.participants.find(p => p.win === true);
-    let oldWinnerId = oldWinner ? (oldWinner.deckId || null) : null;
+    let oldWinnerId = oldWinner ? oldWinner.deckId : null;
     let targetNewId = newWinnerDeckId;
-
-    if (!targetNewId || (oldWinner && !oldWinnerId)) {
-        const winnerObj = allDecks.find(d => d.player === playerName && d.deckName === deckName);
-        if (winnerObj) targetNewId = winnerObj.id;
-        if (oldWinner && !oldWinnerId) {
-            const loserObj = allDecks.find(d => d.player === oldWinner.player && d.deckName === oldWinner.deckName);
-            if (loserObj) oldWinnerId = loserObj.id;
-        }
-    }
-
     const updatedParticipants = matchData.participants.map(p => ({ ...p, win: (p.player === playerName && p.deckName === deckName) }));
     batch.update(matchRef, { participants: updatedParticipants });
-
     if (oldWinnerId && oldWinnerId !== targetNewId) { batch.update(doc(db, "decks", oldWinnerId), { wins: increment(-1), losses: increment(1) }); }
     if (targetNewId && oldWinnerId !== targetNewId) { batch.update(doc(db, "decks", targetNewId), { wins: increment(1), losses: increment(-1) }); }
     await batch.commit();
 }
 
-// Deletion Handlers
 window.handleDeckDeletionTrigger = (id, deckName, playerName) => {
     const isMisc = deckName.toLowerCase() === 'misc';
     if (isMisc) {
@@ -417,12 +471,6 @@ async function finalizeDeckDeletion(id, playerName, merge) {
         }
     }
     await deleteDoc(doc(db, "decks", id));
-}
-
-function handlePlayerDeletion(id, name) {
-    openModal(`Delete Player "${name}"?`, "Proceed?", [
-        { label: "Confirm Delete", color: "var(--danger)", onClick: async () => await deleteDoc(doc(db, "players", id)) }
-    ]);
 }
 
 document.getElementById('toggleTagsBtn').onclick = () => {

@@ -38,9 +38,8 @@ body {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
     padding: 25px; max-width: 400px; width: 90%; box-shadow: var(--shadow); text-align: center;
 }
-.modal-card h3 { margin-top: 0; font-size: 1.2rem; }
-.modal-card p { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 20px; }
-.modal-actions { display: flex; flex-direction: column; gap: 10px; }
+.modal-card h3 { margin-top: 0; font-size: 1.2rem; margin-bottom: 15px; }
+.modal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
 .modal-actions button { width: 100%; }
 
 .container { margin: 0 auto; transition: max-width 0.3s ease; }
@@ -109,6 +108,32 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
 .roster-deck-info { flex: 1; }
 .roster-deck-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 5px; }
 
+/* Player Tab & Controls */
+.player-tab-container { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+
+.roster-tab-btn { 
+    flex: 1; 
+    text-align: left; 
+    border: 1px solid var(--border); 
+    color: white; 
+    padding: 10px 14px; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    transition: all 0.2s; 
+    font-weight: 800;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+}
+
+.roster-tab-btn.active { 
+    transform: translateX(5px);
+    box-shadow: 0 0 10px rgba(255,255,255,0.2);
+}
+
+.player-controls { display: flex; gap: 4px; }
+.player-del-btn { background: none; color: var(--danger); padding: 5px; font-size: 12px; cursor: pointer; }
+.player-edit-btn { background: none; padding: 5px; font-size: 12px; cursor: pointer; opacity: 0.6; }
+.player-edit-btn:hover { opacity: 1; }
+
 .pill-won { background: var(--success); }
 .pill-kos { background: var(--danger); }
 .pill-sol { background: var(--clr-sol); color: #000; }
@@ -124,11 +149,6 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
 /* Manage/History Helper Styles */
 .manage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
 @media (max-width: 768px) { .manage-grid { grid-template-columns: 1fr; } }
-
-.player-tab-container { display: flex; align-items: center; gap: 4px; margin-bottom: 5px; }
-.roster-tab-btn { flex: 1; text-align: left; border: 1px solid var(--border); background: var(--bg); color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
-.roster-tab-btn.active { background: rgba(255,255,255,0.05); transform: translateX(5px); }
-.player-del-btn { background: none; color: var(--danger); padding: 5px; font-size: 12px; cursor: pointer; }
 
 .history-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 15px; margin-bottom: 12px; }
 .history-header { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 10px; }
@@ -156,6 +176,36 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
 .input-group { display: flex; gap: 10px; }
 input, select { background: #121416; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px; flex: 1; font-size: 13px; margin-bottom: 5px; }
 
+/* Curated Color Grid UI */
+.modern-color-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px;
+    margin-top: 5px;
+    background: #121416;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+}
+
+.color-swatch {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+}
+
+.color-swatch.active {
+    border-color: white;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
 button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; }
 .btn-blue { background: var(--accent); color: white; font-size: 0.8rem; }
 .btn-green { background: var(--success); color: white; }
@@ -175,3 +225,4 @@ button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700;
 .ko-badge input { width: 25px; background: transparent; border: none; color: white; font-weight: 800; padding: 0; text-align: center; }
 
 .delete-btn-sm { background: var(--danger); color: white; font-size: 0.65rem; padding: 4px 10px; border-radius: 6px; }
+.edit-btn-sm { background: transparent; border: 1px solid var(--border); color: var(--text-dim); font-size: 0.6rem; padding: 2px 8px; border-radius: 4px; }

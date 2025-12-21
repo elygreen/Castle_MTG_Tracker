@@ -50,9 +50,12 @@
                 <div class="manage-col">
                     <section class="card">
                         <h2>Add Player</h2>
-                        <div class="input-group">
-                            <input type="text" id="newPlayerName" placeholder="Name (e.g. Ely)">
-                            <button id="addPlayerBtn" class="btn-blue">Register</button>
+                        <div class="input-group" style="flex-direction: column; gap: 15px;">
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="newPlayerName" placeholder="Name (e.g. Ely)" style="margin:0;">
+                                <button id="addPlayerBtn" class="btn-blue" style="flex: none;">Register</button>
+                            </div>
+                            <div id="newPlayerColorGrid" class="modern-color-grid"></div>
                         </div>
                     </section>
 
@@ -107,8 +110,8 @@
 
     <div id="customModal" class="modal-overlay">
         <div class="modal-card">
-            <h3 id="modalTitle">Delete Deck?</h3>
-            <p id="modalBody">Would you like to merge stats into the Misc deck or delete permanently?</p>
+            <h3 id="modalTitle">Modal Title</h3>
+            <div id="modalBody">Modal Body</div>
             <div id="modalActions" class="modal-actions"></div>
         </div>
     </div>
