@@ -205,14 +205,25 @@ onSnapshot(query(collection(db, "players"), orderBy("name", "asc")), (snapshot) 
     }
 });
 
-onSnapshot(query(collection(db, "decks"), orderBy("wins", "desc")), (snapshot) => {
+onSnapshot(query(collection(db, "decks")), (snapshot) => {
     document.getElementById('loading').style.display = 'none';
     deckList.innerHTML = '';
     allDecks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Calculate total games and sort by Games Played (descending)
+    allDecks.sort((a, b) => {
+        const totalA = (a.wins || 0) + (a.losses || 0);
+        const totalB = (b.wins || 0) + (b.losses || 0);
+        return totalB - totalA; 
+    });
+
     allDecks.forEach(deck => {
-        const total = (deck.wins || 0) + (deck.losses || 0);
-        const rate = total > 0 ? ((deck.wins / total) * 100).toFixed(0) : 0;
+        const wins = deck.wins || 0;
+        const losses = deck.losses || 0;
+        const total = wins + losses;
+        const rate = total > 0 ? ((wins / total) * 100).toFixed(0) : 0;
         const tags = deck.deckTags || [];
+        
         const li = document.createElement('li');
         li.className = 'deck-card-container';
         li.innerHTML = `
@@ -225,13 +236,19 @@ onSnapshot(query(collection(db, "decks"), orderBy("wins", "desc")), (snapshot) =
                             ${tags.map(t => `<span class="individual-tag" style="${getTagStyle(t)}">${t}</span>`).join('')}
                         </div>
                     </div>
-                    <div class="win-rate-badge">
-                        <span class="win-rate-val">${rate}%</span>
-                        <span class="win-rate-label">WIN RATE</span>
+                    <div style="display: flex; gap: 8px;">
+                        <div class="win-rate-badge">
+                            <span class="win-rate-val">${total}</span>
+                            <span class="win-rate-label">GAMES</span>
+                        </div>
+                        <div class="win-rate-badge">
+                            <span class="win-rate-val">${rate}%</span>
+                            <span class="win-rate-label">WIN RATE</span>
+                        </div>
                     </div>
                 </div>
                 <div class="stat-badges">
-                    <div class="stat-badge-pill pill-won">WON <b>${deck.wins || 0}</b></div>
+                    <div class="stat-badge-pill pill-won">WON <b>${wins}</b></div>
                     <div class="stat-badge-pill pill-kos">KOS <b>${deck.knockouts || 0}</b></div>
                     <div class="stat-badge-pill pill-sol">SOL <b>${deck.solRingOpening || 0}</b></div>
                     <div class="stat-badge-pill pill-blood">BLD <b>${deck.firstBloodCount || 0}</b></div>
