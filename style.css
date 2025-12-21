@@ -91,10 +91,23 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
     letter-spacing: 0.5px;
 }
 
-/* Stat Badge Layout */
+/* Stat Badge Layout (Leaderboard) */
 .stat-badges { display: flex; flex-wrap: wrap; gap: 6px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; }
 .stat-badge-pill { font-size: 0.65rem; padding: 4px 8px; border-radius: 5px; color: white; font-weight: 800; display: flex; gap: 5px; }
 .stat-badge-pill b { color: white; opacity: 0.9; }
+
+/* Leaderboard Pills Backgrounds */
+.pill-won { background: var(--success); }
+.pill-kos { background: var(--danger); }
+.pill-sol { background: var(--clr-sol); color: #000; }
+.pill-sol b { color: #000; }
+.pill-blood { background: var(--clr-blood); }
+.pill-ramp { background: var(--clr-ramp); }
+.pill-draw { background: var(--clr-draw); }
+.pill-first { background: var(--clr-first); }
+.pill-last { background: var(--clr-last); }
+.pill-fun { background: var(--clr-fun); }
+.pill-impact { background: var(--clr-impact); }
 
 /* Roster UI Enhancements */
 .roster-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
@@ -133,18 +146,6 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
 .player-del-btn { background: none; color: var(--danger); padding: 5px; font-size: 12px; cursor: pointer; }
 .player-edit-btn { background: none; padding: 5px; font-size: 12px; cursor: pointer; opacity: 0.6; }
 .player-edit-btn:hover { opacity: 1; }
-
-.pill-won { background: var(--success); }
-.pill-kos { background: var(--danger); }
-.pill-sol { background: var(--clr-sol); color: #000; }
-.pill-sol b { color: #000; }
-.pill-blood { background: var(--clr-blood); }
-.pill-ramp { background: var(--clr-ramp); }
-.pill-draw { background: var(--clr-draw); }
-.pill-first { background: var(--clr-first); }
-.pill-last { background: var(--clr-last); }
-.pill-fun { background: var(--clr-fun); }
-.pill-impact { background: var(--clr-impact); }
 
 /* Manage/History Helper Styles */
 .manage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
@@ -215,14 +216,109 @@ button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700;
 .tag-selector-hidden { display: none; }
 .tag-selector-visible { display: block; }
 
-.participants-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
-@media (max-width: 600px) { .participants-grid { grid-template-columns: 1fr; } }
-.stat-pill { padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 5px; font-size: 0.6rem; color: white; text-transform: uppercase; font-weight: 800; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
-.participant-header { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
-.won-toggle { display: flex; align-items: center; gap: 5px; background: var(--border); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.65rem; font-weight: 800; }
-.won-toggle:has(input:checked) { border-color: var(--success); background: rgba(46, 125, 50, 0.2); color: #4caf50; }
-.ko-badge { display: flex; align-items: center; gap: 5px; background: var(--bg); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.65rem; color: var(--text-dim); }
-.ko-badge input { width: 25px; background: transparent; border: none; color: white; font-weight: 800; padding: 0; text-align: center; }
+/* Compact side-by-side Participants */
+.participants-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); 
+    gap: 10px; 
+    margin-bottom: 15px; 
+}
+
+.participant-card-compact {
+    padding: 10px !important;
+    margin-bottom: 0 !important;
+}
+
+.participant-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.participant-row:last-child {
+    margin-bottom: 0;
+}
+
+.input-group-main {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+}
+
+.input-group-main select {
+    padding: 6px;
+    font-size: 11px;
+    transition: all 0.2s ease;
+}
+
+.remove-participant {
+    background: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 0 4px;
+}
+
+/* Match Adder Stat Pills - Default Gray */
+.stat-pill { 
+    display: flex; 
+    align-items: center; 
+    gap: 5px; 
+    padding: 4px 8px; 
+    border-radius: 6px; 
+    font-size: 0.6rem; 
+    font-weight: 800; 
+    cursor: pointer; 
+    border: 1px solid transparent; 
+    color: white; 
+    text-transform: uppercase;
+    background: #2a2d31; 
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.stat-pill.compact-pill { 
+    padding: 3px 6px; 
+    font-size: 0.55rem; 
+    gap: 3px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.won-toggle { 
+    display: flex; 
+    align-items: center; 
+    gap: 5px; 
+    background: #2a2d31; 
+    padding: 6px 10px; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    font-size: 0.65rem; 
+    font-weight: 800; 
+    border: 1px solid transparent; 
+    transition: all 0.2s ease;
+}
+
+.won-toggle.compact-toggle { 
+    padding: 5px 8px; 
+    font-size: 0.55rem; 
+}
+
+/* COLORIZED STATES WHEN CHECKED */
+.won-toggle:has(input:checked) { 
+    border-color: var(--success) !important; 
+    background: var(--success) !important; 
+    color: #fff !important; 
+}
+
+.pill-blood:has(input:checked) { background: var(--clr-blood) !important; border-color: rgba(255,255,255,0.3); }
+.pill-ramp:has(input:checked) { background: var(--clr-ramp) !important; border-color: rgba(255,255,255,0.3); }
+.pill-draw:has(input:checked) { background: var(--clr-draw) !important; border-color: rgba(255,255,255,0.3); }
+.pill-first:has(input:checked) { background: var(--clr-first) !important; border-color: rgba(255,255,255,0.3); }
+.pill-last:has(input:checked) { background: var(--clr-last) !important; border-color: rgba(255,255,255,0.3); }
+.pill-sol:has(input:checked) { background: var(--clr-sol) !important; color: #000; border-color: rgba(0,0,0,0.2); }
+.pill-impact:has(input:checked) { background: var(--clr-impact) !important; border-color: rgba(255,255,255,0.3); }
+.pill-fun:has(input:checked) { background: var(--clr-fun) !important; border-color: rgba(255,255,255,0.3); }
 
 .delete-btn-sm { background: var(--danger); color: white; font-size: 0.65rem; padding: 4px 10px; border-radius: 6px; }
 .edit-btn-sm { background: transparent; border: 1px solid var(--border); color: var(--text-dim); font-size: 0.6rem; padding: 2px 8px; border-radius: 4px; }

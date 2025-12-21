@@ -20,7 +20,8 @@ const db = getFirestore(app);
 let allDecks = [];
 let allPlayers = []; 
 let selectedRosterPlayer = null;
-let selectedNewPlayerColor = "#3d85ff"; // Default
+let selectedNewPlayerColor = "#3d85ff"; 
+let initialPopulated = false;
 
 const MODERN_COLORS = [
     "#16171a", "#7f0622", "#d62411", "#ff8426", 
@@ -49,16 +50,13 @@ const getPlayerColor = (name) => {
 };
 
 const TAG_COLORS = {
-    "Aggro":        "#ff4444",     "Aristocrats":   "#9c27b0",
-    "Artifacts":    "#607d8b",      "Big Mana":     "#4caf50",
-    "Blink":        "#00bcd4",      "Burn":         "#ff5722",
-    "Combo":        "#ffeb3b",      "Control":      "#2196f3", 
-    "Group Hug":    "#8bc34a",      "Lands":        "#14a35cff",
-    "Lifegain":     "#fc79a4ff",      "Midrange":     "#ff9800",
-    "Mill":         "#3f51b5",      "Reanimator":   "#212121",
-    "Spellslinger": "#03a9f4",      "Stax":         "#856b69ff",
-    "Tokens":       "#ffc107",      "Tribal":       "#cddc39",
-    "Voltron":      "#ac0505ff",      "+1/+1 Counters": "#009688"
+    "Aggro": "#ff4444", "Aristocrats": "#9c27b0", "Artifacts": "#607d8b",
+    "Big Mana": "#4caf50", "Blink": "#00bcd4", "Burn": "#ff5722",
+    "Combo": "#ffeb3b", "Control": "#2196f3", "Group Hug": "#8bc34a",
+    "Lands": "#14a35cff", "Lifegain": "#fc79a4ff", "Midrange": "#ff9800",
+    "Mill": "#3f51b5", "Reanimator": "#212121", "Spellslinger": "#03a9f4",
+    "Stax": "#856b69ff", "Tokens": "#ffc107", "Tribal": "#cddc39",
+    "Voltron": "#ac0505ff", "+1/+1 Counters": "#009688"
 };
 
 const getTagStyle = (tag) => {
@@ -103,6 +101,66 @@ function openModal(title, bodyHtml, actions) {
 }
 function closeModal() { customModal.classList.remove('active'); }
 
+function addParticipant() {
+    const row = document.createElement('div');
+    row.className = 'card participant-card-compact';
+    row.style.background = 'rgba(0,0,0,0.2)';
+    row.innerHTML = `
+        <div class="participant-row line-1">
+            <div class="input-group-main">
+                <select class="p-owner">
+                    <option value="" disabled selected>Player...</option>
+                    ${allPlayers.map(p => `<option value="${p.name}" style="color:${p.color}; font-weight:bold;">${p.name}</option>`).join('')}
+                </select>
+                <select class="p-deck"><option value="" disabled selected>Deck...</option></select>
+                <select class="p-kills">
+                    <option value="0">0 KO's</option>
+                    <option value="1">1 KO</option>
+                    <option value="2">2 KO's</option>
+                    <option value="3">3 KO's</option>
+                    <option value="4">4 KO's</option>
+                </select>
+            </div>
+            <button class="remove-participant" onclick="this.parentElement.parentElement.remove()">✕</button>
+        </div>
+        
+        <div class="participant-row line-2">
+            <label class="won-toggle compact-toggle"><input type="radio" name="winner" class="p-win" style="display:none">WON</label>
+            <label class="stat-pill pill-blood compact-pill"><input type="radio" name="blood_owner" class="p-blood" style="display:none"> Blood</label>
+            <label class="stat-pill pill-ramp compact-pill"><input type="radio" name="ramp_owner" class="p-ramp" style="display:none"> Ramp</label>
+            <label class="stat-pill pill-draw compact-pill"><input type="radio" name="draw_owner" class="p-draw" style="display:none"> Draw</label>
+            <label class="stat-pill pill-first compact-pill"><input type="radio" name="first_owner" class="p-first" style="display:none"> 1st</label>
+            <label class="stat-pill pill-last compact-pill"><input type="radio" name="last_owner" class="p-last" style="display:none"> Last</label>
+        </div>
+
+        <div class="participant-row line-3">
+            <label class="stat-pill pill-sol compact-pill"><input type="checkbox" class="p-sol" style="display:none"> Sol Ring</label>
+            <label class="stat-pill pill-impact compact-pill"><input type="checkbox" class="p-impact" style="display:none"> Impact</label>
+            <label class="stat-pill pill-fun compact-pill"><input type="checkbox" class="p-fun" style="display:none"> Fun</label>
+        </div>
+    `;
+    
+    const ownerSel = row.querySelector('.p-owner');
+    const deckSel = row.querySelector('.p-deck');
+
+    ownerSel.onchange = () => {
+        const playerName = ownerSel.value;
+        const playerColor = getPlayerColor(playerName);
+        
+        // Dynamic Player Styling
+        ownerSel.style.borderColor = playerColor;
+        ownerSel.style.color = playerColor;
+        ownerSel.style.fontWeight = '800';
+
+        let filtered = allDecks.filter(d => d.player === playerName);
+        filtered.sort((a,b) => a.deckName === 'Misc' ? 1 : b.deckName === 'Misc' ? -1 : a.deckName.localeCompare(b.deckName));
+        deckSel.innerHTML = '<option value="" disabled selected>Deck...</option>' + 
+            filtered.map(d => `<option value="${d.id}">${d.deckName}</option>`).join('');
+    };
+
+    document.getElementById('gameParticipants').appendChild(row);
+}
+
 // --- 1. Listeners ---
 onSnapshot(query(collection(db, "players"), orderBy("name", "asc")), (snapshot) => {
     allPlayers = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name, color: doc.data().color || "#3d85ff" }));
@@ -140,6 +198,11 @@ onSnapshot(query(collection(db, "players"), orderBy("name", "asc")), (snapshot) 
         container.appendChild(controls);
         rosterTabs.appendChild(container);
     });
+
+    if (!initialPopulated && allPlayers.length > 0) {
+        for (let i = 0; i < 4; i++) addParticipant();
+        initialPopulated = true;
+    }
 });
 
 onSnapshot(query(collection(db, "decks"), orderBy("wins", "desc")), (snapshot) => {
@@ -265,12 +328,10 @@ function updateRosterView() {
     rosterDeckView.appendChild(ul);
 }
 
-// Initialize New Player Color Grid
 renderColorGrid('newPlayerColorGrid', selectedNewPlayerColor, (color) => {
     selectedNewPlayerColor = color;
 });
 
-// --- 2. Actions ---
 document.getElementById('addPlayerBtn').onclick = async () => {
     const nameInput = document.getElementById('newPlayerName');
     const name = nameInput.value.trim();
@@ -303,44 +364,7 @@ document.getElementById('addDeckBtn').onclick = async () => {
     document.querySelectorAll('#tagSelector input').forEach(cb => cb.checked = false);
 };
 
-document.getElementById('addParticipantBtn').onclick = () => {
-    const row = document.createElement('div');
-    row.className = 'card';
-    row.style.background = 'rgba(0,0,0,0.2)';
-    row.innerHTML = `
-        <div class="participant-header">
-            <label class="won-toggle"><input type="radio" name="winner" class="p-win" style="display:none">WON</label>
-            <div style="display: flex; gap: 4px; flex: 2;">
-                <select class="p-owner" style="margin:0; flex:1; font-size: 11px;">
-                    <option value="" disabled selected>Player...</option>
-                    ${allPlayers.map(p => `<option value="${p.name}">${p.name}</option>`).join('')}
-                </select>
-                <select class="p-deck" style="margin:0; flex:1.5; font-size: 11px;"><option value="" disabled selected>Select Deck...</option></select>
-            </div>
-            <div class="ko-badge"><span>KO'S</span><input type="number" class="p-kills" value="0" min="0" max="9"></div>
-            <button onclick="this.parentElement.parentElement.remove()" style="background:none; color:var(--danger); cursor:pointer;">✕</button>
-        </div>
-        <div style="display:flex; flex-wrap:wrap; gap:4px;">
-            <label class="stat-pill pill-sol"><input type="checkbox" class="p-sol"> Sol Ring</label>
-            <label class="stat-pill pill-blood"><input type="checkbox" class="p-blood"> Blood</label>
-            <label class="stat-pill pill-ramp"><input type="checkbox" class="p-ramp"> Most Ramp</label>
-            <label class="stat-pill pill-draw"><input type="checkbox" class="p-draw"> Most Draw</label>
-            <label class="stat-pill pill-first"><input type="checkbox" class="p-first"> 1st</label>
-            <label class="stat-pill pill-last"><input type="checkbox" class="p-last"> Last</label>
-            <label class="stat-pill pill-fun"><input type="checkbox" class="p-fun"> Fun</label>
-            <label class="stat-pill pill-impact"><input type="checkbox" class="p-impact"> Impact</label>
-        </div>
-    `;
-    const ownerSel = row.querySelector('.p-owner');
-    const deckSel = row.querySelector('.p-deck');
-    ownerSel.onchange = () => {
-        let filtered = allDecks.filter(d => d.player === ownerSel.value);
-        filtered.sort((a,b) => a.deckName === 'Misc' ? 1 : b.deckName === 'Misc' ? -1 : a.deckName.localeCompare(b.deckName));
-        deckSel.innerHTML = '<option value="" disabled selected>Select Deck...</option>' + 
-            filtered.map(d => `<option value="${d.id}">${d.deckName}</option>`).join('');
-    };
-    document.getElementById('gameParticipants').appendChild(row);
-};
+document.getElementById('addParticipantBtn').onclick = addParticipant;
 
 document.getElementById('submitMatchBtn').onclick = async () => {
     const rows = document.querySelectorAll('#gameParticipants .card');
@@ -378,6 +402,7 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     await addDoc(collection(db, "matches"), { timestamp: serverTimestamp(), participants: matchParticipants });
     document.getElementById('gameParticipants').innerHTML = '';
     alert("Match Recorded!");
+    for (let i = 0; i < 4; i++) addParticipant();
 };
 
 window.handleEditPlayerTrigger = (id, name, color) => {
