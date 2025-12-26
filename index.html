@@ -23,7 +23,13 @@
             <section class="card">
                 <h2>New Match</h2>
                 <div id="gameParticipants" class="participants-grid"></div>
-                <div style="display: flex; gap: 10px; margin-top: 5px;">
+                
+                <div style="margin-top: 15px;">
+                    <label style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 5px;">Match Comments</label>
+                    <textarea id="matchComment" placeholder="Anything note worthy?" style="width: 100%; min-height: 80px; box-sizing: border-box;"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <button id="addParticipantBtn" class="btn-blue" style="flex: 1; border: 1px solid var(--border);">+ Add Player</button>
                     <button id="submitMatchBtn" style="background-color: var(--success); color: white; flex: 1.5;">Submit Results</button>
                 </div>

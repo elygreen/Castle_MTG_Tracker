@@ -89,10 +89,10 @@ const TAG_COLORS = {
     "Aggro": "#ff4444", "Aristocrats": "#9c27b0", "Artifacts": "#607d8b",
     "Big Mana": "#4caf50", "Blink": "#00bcd4", "Burn": "#ff5722",
     "Combo": "#ffeb3b", "Control": "#2196f3", "Group Hug": "#8bc34a",
-    "Lands": "#14a35cff", "Lifegain": "#fc79a4ff", "Midrange": "#ff9800",
+    "Lands": "#14a35c", "Lifegain": "#fc79a4", "Midrange": "#ff9800",
     "Mill": "#3f51b5", "Reanimator": "#212121", "Spellslinger": "#03a9f4",
-    "Stax": "#856b69ff", "Tokens": "#ffc107", "Tribal": "#cddc39",
-    "Voltron": "#ac0505ff", "+1/+1 Counters": "#009688"
+    "Stax": "#856b69", "Tokens": "#ffc107", "Tribal": "#cddc39",
+    "Voltron": "#ac0505", "+1/+1 Counters": "#009688"
 };
 
 const getTagStyle = (tag) => {
@@ -353,7 +353,7 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
                         </div>
                         <div class="history-stats">
                             ${p.win ? '<div class="stat-badge-pill pill-won">WIN</div>' : ''}
-                            ${p.kos > 0 ? `<div class="stat-badge-pill pill-kos">KOS <b>${p.kos}</b></div>` : ''}
+                            ${p.kos !== "N/A" && p.kos > 0 ? `<div class="stat-badge-pill pill-kos">KOS <b>${p.kos}</b></div>` : ''}
                             ${p.funRating > 0 ? `<div class="stat-badge-pill pill-fun">★ <b>${p.funRating}</b></div>` : ''}
                             ${p.sol ? `<div class="stat-badge-pill pill-sol">SOL</div>` : ''}
                             ${p.blood ? `<div class="stat-badge-pill pill-blood">BLD</div>` : ''}
@@ -366,6 +366,13 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
                         </div>
                     </div>
                 `).join('')}
+                
+                ${match.comment ? `
+                    <div class="history-comment-box">
+                        <span class="history-comment-label">Match Notes</span>
+                        <div class="history-comment-text">"${match.comment}"</div>
+                    </div>
+                ` : ''}
             </div>
         `;
         historyList.appendChild(card);
@@ -397,7 +404,10 @@ function updateRosterView() {
                     <div class="roster-deck-title">${d.deckName}</div>
                     <div class="deck-tags-grid">${(d.deckTags || []).map(t => `<span class="individual-tag" style="${getTagStyle(t)}">${t}</span>`).join('')}</div>
                 </div>
-                <button class="delete-btn-sm" onclick="handleDeckDeletionTrigger('${d.id}', '${d.deckName}', '${d.player}')">Delete</button>
+                <div class="player-controls">
+                    <button class="player-edit-btn" onclick="handleEditDeckTagsTrigger('${d.id}', '${d.deckName.replace(/'/g, "\\'")}')">✏️</button>
+                    <button class="player-del-btn" onclick="handleDeckDeletionTrigger('${d.id}', '${d.deckName.replace(/'/g, "\\'")}', '${d.player}')">✕</button>
+                </div>
             </div>
         `;
         ul.appendChild(li);
@@ -454,6 +464,9 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     if (!hasWinner) { alert("Please select a winner before submitting!"); return; }
     for (const row of rows) { if (!row.querySelector('.p-deck').value) { alert("Ensure every player has a deck selected."); return; } }
     
+    // Capture the comment
+    const matchComment = document.getElementById('matchComment').value.trim();
+
     const batch = writeBatch(db);
     const matchParticipants = [];
     
@@ -463,13 +476,12 @@ document.getElementById('submitMatchBtn').onclick = async () => {
         const win = row.querySelector('.p-win').checked;
         const funRating = parseInt(row.querySelector('.p-fun-rating').value) || 0;
         
-        // Handle N/A Knockouts
         const rawKills = row.querySelector('.p-kills').value;
         const kills = rawKills === "na" ? 0 : parseInt(rawKills);
         
         matchParticipants.push({
             deckId: id, player: deckObj.player, deckName: deckObj.deckName, deckTags: deckObj.deckTags || [], win, 
-            kos: rawKills === "na" ? "N/A" : kills, // Store as "N/A" in history for clarity
+            kos: rawKills === "na" ? "N/A" : kills,
             funRating: funRating,
             sol: row.querySelector('.p-sol').checked, blood: row.querySelector('.p-blood').checked,
             ramp: row.querySelector('.p-ramp').checked, draw: row.querySelector('.p-draw').checked,
@@ -479,7 +491,7 @@ document.getElementById('submitMatchBtn').onclick = async () => {
         
         batch.update(doc(db, "decks", id), {
             wins: increment(win ? 1 : 0), losses: increment(win ? 0 : 1), 
-            knockouts: increment(kills), // Will increment by 0 if N/A was selected
+            knockouts: increment(kills),
             funRatingTotal: increment(funRating),
             funRatingCount: increment(funRating > 0 ? 1 : 0),
             solRingOpening: increment(row.querySelector('.p-sol').checked ? 1 : 0),
@@ -494,13 +506,23 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     });
     
     await batch.commit();
-    await addDoc(collection(db, "matches"), { timestamp: serverTimestamp(), participants: matchParticipants });
+    // Save match with the comment
+    await addDoc(collection(db, "matches"), { 
+        timestamp: serverTimestamp(), 
+        participants: matchParticipants,
+        comment: matchComment 
+    });
     
-    document.getElementById('gameParticipants').innerHTML = '';
     alert("Match Recorded!");
-    
-    const defaultPod = ["Ely", "Lucian", "Ryan", "Joey"];
-    defaultPod.forEach(name => addParticipant(name));
+
+    // Reset Logic: Keep players, clear stats and comment
+    document.getElementById('matchComment').value = '';
+    rows.forEach(row => {
+        row.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
+        row.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        row.querySelector('.p-kills').value = "na";
+        row.querySelector('.p-fun-rating').value = "0";
+    });
 };
 
 // --- MODAL TRIGGERS ---
@@ -611,3 +633,51 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         document.getElementById(btn.dataset.tab).classList.add('active');
     };
 });
+
+window.handleEditDeckTagsTrigger = async (deckId, deckName) => {
+    const deck = allDecks.find(d => d.id === deckId);
+    const currentTags = deck.deckTags || [];
+    
+    // Get all possible tags from the existing UI list
+    const allAvailableTags = [
+        "Aggro", "Aristocrats", "Artifacts", "Big Mana", "Blink", "Burn", 
+        "Combo", "Control", "Group Hug", "Lands", "Lifegain", "Midrange", 
+        "Mill", "Reanimator", "Spellslinger", "Stax", "Tokens", "Tribal", 
+        "Voltron", "+1/+1 Counters"
+    ];
+
+    const body = `
+        <div style="text-align:left;">
+            <p style="font-size:0.8rem; color:var(--text-dim); margin-bottom:15px;">Update tags for <b>${deckName}</b></p>
+            <div id="editTagGrid" class="tag-selector-grid">
+                ${allAvailableTags.map(tag => `
+                    <label class="tag-checkbox">
+                        <input type="checkbox" value="${tag}" ${currentTags.includes(tag) ? 'checked' : ''}> ${tag}
+                    </label>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    openModal(`Edit Tags`, body, [
+        { 
+            label: "Save Tags", 
+            color: "var(--success)", 
+            onClick: () => finalizeDeckTagUpdate(deckId) 
+        }
+    ]);
+};
+
+async function finalizeDeckTagUpdate(deckId) {
+    const checkedTags = Array.from(document.querySelectorAll('#editTagGrid input:checked'))
+                            .map(cb => cb.value);
+    
+    try {
+        await updateDoc(doc(db, "decks", deckId), {
+            deckTags: checkedTags
+        });
+    } catch (error) {
+        console.error("Error updating tags: ", error);
+        alert("Failed to update tags.");
+    }
+}
