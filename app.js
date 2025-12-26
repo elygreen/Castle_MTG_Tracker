@@ -1,3 +1,39 @@
+// --- AUTHENTICATION LOGIC ---
+const APP_PASSWORD = "castle123";
+
+function checkAuth() {
+    const isAuth = sessionStorage.getItem('mtg_auth');
+    
+    if (isAuth === 'true') {
+        document.body.classList.add('auth-passed'); 
+        return true;
+    }
+
+    const entry = prompt("Please enter the password to access data entry:");
+    
+    if (entry === APP_PASSWORD) {
+        sessionStorage.setItem('mtg_auth', 'true');
+        document.body.classList.add('auth-passed'); 
+        return true;
+    } else {
+        alert("Incorrect password. Access denied.");
+        document.body.style.opacity = "1"; 
+        document.body.innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#121416; color:white; font-family:sans-serif;">
+                <h1>Locked</h1>
+                <p>Refresh the page to try again.</p>
+            </div>
+        `;
+        return false;
+    }
+}
+
+if (!checkAuth()) {
+    throw new Error("Unauthorized access");
+}
+
+// --- FIREBASE IMPORTS ---
+// FIXED: Removed the duplicate initializeApp import that was crashing the script
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { 
     getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, 
@@ -16,7 +52,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// State
+// --- STATE ---
 let allDecks = [];
 let allPlayers = []; 
 let selectedRosterPlayer = null;
@@ -30,6 +66,7 @@ const MODERN_COLORS = [
     "#65c227ff", "#10d275", "#007899", "#311b55ff"
 ];
 
+// --- DOM ELEMENTS ---
 const deckList = document.getElementById('deckList');
 const playerSelect = document.getElementById('playerSelect');
 const tagContainer = document.getElementById('tagSelectorContainer');
@@ -37,13 +74,12 @@ const rosterTabs = document.getElementById('rosterTabs');
 const rosterDeckView = document.getElementById('rosterDeckList');
 const historyList = document.getElementById('matchHistoryList');
 
-// Modal Elements
 const customModal = document.getElementById('customModal');
 const modalTitle = document.getElementById('modalTitle');
 const modalBody = document.getElementById('modalBody');
 const modalActions = document.getElementById('modalActions');
 
-// --- Helpers ---
+// --- HELPERS ---
 const getPlayerColor = (name) => {
     const player = allPlayers.find(p => p.name === name);
     return player ? player.color : "var(--accent)";
@@ -66,6 +102,7 @@ const getTagStyle = (tag) => {
 
 function renderColorGrid(containerId, activeColor, onSelect) {
     const container = document.getElementById(containerId);
+    if (!container) return;
     container.innerHTML = MODERN_COLORS.map(color => `
         <div class="color-swatch ${color === activeColor ? 'active' : ''}" 
              style="background-color: ${color}" 
@@ -99,9 +136,10 @@ function openModal(title, bodyHtml, actions) {
     modalActions.appendChild(cancelBtn);
     customModal.classList.add('active');
 }
+
 function closeModal() { customModal.classList.remove('active'); }
 
-function addParticipant() {
+function addParticipant(defaultPlayerName = null) {
     const row = document.createElement('div');
     row.className = 'card participant-card-compact';
     row.style.background = 'rgba(0,0,0,0.2)';
@@ -120,6 +158,14 @@ function addParticipant() {
                     <option value="3">3 KO's</option>
                     <option value="4">4 KO's</option>
                 </select>
+                <select class="p-fun-rating">
+                    <option value="0">N/A Fun</option>
+                    <option value="1">1/5</option>
+                    <option value="2">2/5</option>
+                    <option value="3">3/5</option>
+                    <option value="4">4/5</option>
+                    <option value="5">5/5</option>
+                </select>
             </div>
             <button class="remove-participant" onclick="this.parentElement.parentElement.remove()">✕</button>
         </div>
@@ -135,8 +181,8 @@ function addParticipant() {
 
         <div class="participant-row line-3">
             <label class="stat-pill pill-sol compact-pill"><input type="checkbox" class="p-sol" style="display:none"> Sol Ring</label>
-            <label class="stat-pill pill-impact compact-pill"><input type="checkbox" class="p-impact" style="display:none"> Impact</label>
-            <label class="stat-pill pill-fun compact-pill"><input type="checkbox" class="p-fun" style="display:none"> Fun</label>
+            <label class="stat-pill pill-impact compact-pill"><input type="checkbox" class="p-impact" style="display:none"> High Impact</label>
+            <label class="stat-pill pill-fun compact-pill"><input type="checkbox" class="p-fun" style="display:none"> Did its thing</label>
         </div>
     `;
     
@@ -147,7 +193,6 @@ function addParticipant() {
         const playerName = ownerSel.value;
         const playerColor = getPlayerColor(playerName);
         
-        // Dynamic Player Styling
         ownerSel.style.borderColor = playerColor;
         ownerSel.style.color = playerColor;
         ownerSel.style.fontWeight = '800';
@@ -159,9 +204,15 @@ function addParticipant() {
     };
 
     document.getElementById('gameParticipants').appendChild(row);
+
+    // FIXED: Dispatch change event to load the decks automatically
+    if (defaultPlayerName && allPlayers.some(p => p.name === defaultPlayerName)) {
+        ownerSel.value = defaultPlayerName;
+        ownerSel.dispatchEvent(new Event('change'));
+    }
 }
 
-// --- 1. Listeners ---
+// --- 1. LISTENERS ---
 onSnapshot(query(collection(db, "players"), orderBy("name", "asc")), (snapshot) => {
     allPlayers = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name, color: doc.data().color || "#3d85ff" }));
     playerSelect.innerHTML = '<option value="" disabled selected>Owner...</option>';
@@ -199,8 +250,10 @@ onSnapshot(query(collection(db, "players"), orderBy("name", "asc")), (snapshot) 
         rosterTabs.appendChild(container);
     });
 
-    if (!initialPopulated && allPlayers.length > 0) {
-        for (let i = 0; i < 4; i++) addParticipant();
+    // FIXED: Simplified initialization check to prevent double-spawning
+    if (!initialPopulated && allPlayers.length > 0 && allDecks.length > 0) {
+        const defaultPod = ["Ely", "Lucian", "Ryan", "Joey"];
+        defaultPod.forEach(name => addParticipant(name));
         initialPopulated = true;
     }
 });
@@ -210,7 +263,6 @@ onSnapshot(query(collection(db, "decks")), (snapshot) => {
     deckList.innerHTML = '';
     allDecks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-    // Calculate total games and sort by Games Played (descending)
     allDecks.sort((a, b) => {
         const totalA = (a.wins || 0) + (a.losses || 0);
         const totalB = (b.wins || 0) + (b.losses || 0);
@@ -257,13 +309,20 @@ onSnapshot(query(collection(db, "decks")), (snapshot) => {
                     <div class="stat-badge-pill pill-first">1ST <b>${deck.wentFirstCount || 0}</b></div>
                     <div class="stat-badge-pill pill-last">LST <b>${deck.wentLastCount || 0}</b></div>
                     <div class="stat-badge-pill pill-fun">FUN <b>${deck.funCount || 0}</b></div>
-                    <div class="stat-badge-pill pill-impact">IMP <b>${deck.impactCount || 0}</b></div>
+                    <div class="stat-badge-pill pill-impact">HI-IMP <b>${deck.impactCount || 0}</b></div>
                 </div>
             </div>
         `;
         deckList.appendChild(li);
     });
     if (selectedRosterPlayer) updateRosterView();
+    
+    // FIXED: Catch initialization if decks load after players
+    if (!initialPopulated && allPlayers.length > 0 && allDecks.length > 0) {
+        const defaultPod = ["Ely", "Lucian", "Ryan", "Joey"];
+        defaultPod.forEach(name => addParticipant(name));
+        initialPopulated = true;
+    }
 });
 
 onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(20)), (snapshot) => {
@@ -295,14 +354,15 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
                         <div class="history-stats">
                             ${p.win ? '<div class="stat-badge-pill pill-won">WIN</div>' : ''}
                             ${p.kos > 0 ? `<div class="stat-badge-pill pill-kos">KOS <b>${p.kos}</b></div>` : ''}
+                            ${p.funRating > 0 ? `<div class="stat-badge-pill pill-fun">★ <b>${p.funRating}</b></div>` : ''}
                             ${p.sol ? `<div class="stat-badge-pill pill-sol">SOL</div>` : ''}
                             ${p.blood ? `<div class="stat-badge-pill pill-blood">BLD</div>` : ''}
                             ${p.ramp ? `<div class="stat-badge-pill pill-ramp">RMP</div>` : ''}
                             ${p.draw ? `<div class="stat-badge-pill pill-draw">DRW</div>` : ''}
                             ${p.first ? `<div class="stat-badge-pill pill-first">1ST</div>` : ''}
                             ${p.last ? `<div class="stat-badge-pill pill-last">LST</div>` : ''}
-                            ${p.fun ? `<div class="stat-badge-pill pill-fun">FUN</div>` : ''}
-                            ${p.impact ? `<div class="stat-badge-pill pill-impact">IMP</div>` : ''}
+                            ${p.fun ? `<div class="stat-badge-pill pill-fun">DID IT</div>` : ''}
+                            ${p.impact ? `<div class="stat-badge-pill pill-impact">HI-IMP</div>` : ''}
                         </div>
                     </div>
                 `).join('')}
@@ -345,10 +405,12 @@ function updateRosterView() {
     rosterDeckView.appendChild(ul);
 }
 
+// --- INITIALIZATION ---
 renderColorGrid('newPlayerColorGrid', selectedNewPlayerColor, (color) => {
     selectedNewPlayerColor = color;
 });
 
+// --- BUTTON CLICKS ---
 document.getElementById('addPlayerBtn').onclick = async () => {
     const nameInput = document.getElementById('newPlayerName');
     const name = nameInput.value.trim();
@@ -358,7 +420,8 @@ document.getElementById('addPlayerBtn').onclick = async () => {
         player: name, deckName: "Misc", deckTags: ["General"], wins: 0, losses: 0, 
         knockouts: 0, firstBloodCount: 0, mostRampCount: 0, 
         mostDrawCount: 0, solRingOpening: 0, wentFirstCount: 0, 
-        wentLastCount: 0, funCount: 0, impactCount: 0
+        wentLastCount: 0, funCount: 0, impactCount: 0,
+        funRatingTotal: 0, funRatingCount: 0
     });
     nameInput.value = '';
 };
@@ -375,13 +438,14 @@ document.getElementById('addDeckBtn').onclick = async () => {
         player, deckName, deckTags: checkedTags, wins: 0, losses: 0, 
         knockouts: 0, firstBloodCount: 0, mostRampCount: 0, 
         mostDrawCount: 0, solRingOpening: 0, wentFirstCount: 0, 
-        wentLastCount: 0, funCount: 0, impactCount: 0
+        wentLastCount: 0, funCount: 0, impactCount: 0,
+        funRatingTotal: 0, funRatingCount: 0
     });
     deckNameInput.value = '';
     document.querySelectorAll('#tagSelector input').forEach(cb => cb.checked = false);
 };
 
-document.getElementById('addParticipantBtn').onclick = addParticipant;
+document.getElementById('addParticipantBtn').onclick = () => addParticipant();
 
 document.getElementById('submitMatchBtn').onclick = async () => {
     const rows = document.querySelectorAll('#gameParticipants .card');
@@ -389,22 +453,30 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     const hasWinner = Array.from(document.querySelectorAll('.p-win')).some(radio => radio.checked);
     if (!hasWinner) { alert("Please select a winner before submitting!"); return; }
     for (const row of rows) { if (!row.querySelector('.p-deck').value) { alert("Ensure every player has a deck selected."); return; } }
+    
     const batch = writeBatch(db);
     const matchParticipants = [];
+    
     rows.forEach(row => {
         const id = row.querySelector('.p-deck').value;
         const deckObj = allDecks.find(d => d.id === id);
         const win = row.querySelector('.p-win').checked;
         const kills = parseInt(row.querySelector('.p-kills').value) || 0;
+        const funRating = parseInt(row.querySelector('.p-fun-rating').value) || 0;
+        
         matchParticipants.push({
             deckId: id, player: deckObj.player, deckName: deckObj.deckName, deckTags: deckObj.deckTags || [], win, kos: kills,
+            funRating: funRating,
             sol: row.querySelector('.p-sol').checked, blood: row.querySelector('.p-blood').checked,
             ramp: row.querySelector('.p-ramp').checked, draw: row.querySelector('.p-draw').checked,
             first: row.querySelector('.p-first').checked, last: row.querySelector('.p-last').checked,
             fun: row.querySelector('.p-fun').checked, impact: row.querySelector('.p-impact').checked
         });
+        
         batch.update(doc(db, "decks", id), {
             wins: increment(win ? 1 : 0), losses: increment(win ? 0 : 1), knockouts: increment(kills),
+            funRatingTotal: increment(funRating),
+            funRatingCount: increment(funRating > 0 ? 1 : 0),
             solRingOpening: increment(row.querySelector('.p-sol').checked ? 1 : 0),
             firstBloodCount: increment(row.querySelector('.p-blood').checked ? 1 : 0),
             mostRampCount: increment(row.querySelector('.p-ramp').checked ? 1 : 0),
@@ -415,13 +487,18 @@ document.getElementById('submitMatchBtn').onclick = async () => {
             impactCount: increment(row.querySelector('.p-impact').checked ? 1 : 0)
         });
     });
+    
     await batch.commit();
     await addDoc(collection(db, "matches"), { timestamp: serverTimestamp(), participants: matchParticipants });
+    
     document.getElementById('gameParticipants').innerHTML = '';
     alert("Match Recorded!");
-    for (let i = 0; i < 4; i++) addParticipant();
+    
+    const defaultPod = ["Ely", "Lucian", "Ryan", "Joey"];
+    defaultPod.forEach(name => addParticipant(name));
 };
 
+// --- MODAL TRIGGERS ---
 window.handleEditPlayerTrigger = (id, name, color) => {
     let tempEditColor = color;
     const body = `
@@ -507,6 +584,7 @@ async function finalizeDeckDeletion(id, playerName, merge) {
                 wins: increment(d.wins||0), losses: increment(d.losses||0), knockouts: increment(d.knockouts||0), 
                 solRingOpening: increment(d.solRingOpening||0), firstBloodCount: increment(d.firstBloodCount||0),
                 mostRampCount: increment(d.mostRampCount||0), mostDrawCount: increment(d.mostDrawCount||0),
+                funRatingTotal: increment(d.funRatingTotal||0), funRatingCount: increment(d.funRatingCount||0),
                 wentFirstCount: increment(d.wentFirstCount||0), wentLastCount: increment(d.wentLastCount||0),
                 funCount: increment(d.funCount||0), impactCount: increment(d.impactCount||0)
             });
@@ -515,6 +593,7 @@ async function finalizeDeckDeletion(id, playerName, merge) {
     await deleteDoc(doc(db, "decks", id));
 }
 
+// --- TAB NAVIGATION & MISC ---
 document.getElementById('toggleTagsBtn').onclick = () => {
     tagContainer.classList.toggle('tag-selector-hidden');
     tagContainer.classList.toggle('tag-selector-visible');
