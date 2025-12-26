@@ -152,6 +152,7 @@ function addParticipant(defaultPlayerName = null) {
                 </select>
                 <select class="p-deck"><option value="" disabled selected>Deck...</option></select>
                 <select class="p-kills">
+                    <option value="na" selected>N/A KOs</option>
                     <option value="0">0 KO's</option>
                     <option value="1">1 KO</option>
                     <option value="2">2 KO's</option>
@@ -205,7 +206,6 @@ function addParticipant(defaultPlayerName = null) {
 
     document.getElementById('gameParticipants').appendChild(row);
 
-    // FIXED: Dispatch change event to load the decks automatically
     if (defaultPlayerName && allPlayers.some(p => p.name === defaultPlayerName)) {
         ownerSel.value = defaultPlayerName;
         ownerSel.dispatchEvent(new Event('change'));
@@ -461,11 +461,15 @@ document.getElementById('submitMatchBtn').onclick = async () => {
         const id = row.querySelector('.p-deck').value;
         const deckObj = allDecks.find(d => d.id === id);
         const win = row.querySelector('.p-win').checked;
-        const kills = parseInt(row.querySelector('.p-kills').value) || 0;
         const funRating = parseInt(row.querySelector('.p-fun-rating').value) || 0;
         
+        // Handle N/A Knockouts
+        const rawKills = row.querySelector('.p-kills').value;
+        const kills = rawKills === "na" ? 0 : parseInt(rawKills);
+        
         matchParticipants.push({
-            deckId: id, player: deckObj.player, deckName: deckObj.deckName, deckTags: deckObj.deckTags || [], win, kos: kills,
+            deckId: id, player: deckObj.player, deckName: deckObj.deckName, deckTags: deckObj.deckTags || [], win, 
+            kos: rawKills === "na" ? "N/A" : kills, // Store as "N/A" in history for clarity
             funRating: funRating,
             sol: row.querySelector('.p-sol').checked, blood: row.querySelector('.p-blood').checked,
             ramp: row.querySelector('.p-ramp').checked, draw: row.querySelector('.p-draw').checked,
@@ -474,7 +478,8 @@ document.getElementById('submitMatchBtn').onclick = async () => {
         });
         
         batch.update(doc(db, "decks", id), {
-            wins: increment(win ? 1 : 0), losses: increment(win ? 0 : 1), knockouts: increment(kills),
+            wins: increment(win ? 1 : 0), losses: increment(win ? 0 : 1), 
+            knockouts: increment(kills), // Will increment by 0 if N/A was selected
             funRatingTotal: increment(funRating),
             funRatingCount: increment(funRating > 0 ? 1 : 0),
             solRingOpening: increment(row.querySelector('.p-sol').checked ? 1 : 0),
