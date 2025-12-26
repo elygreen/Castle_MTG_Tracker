@@ -646,13 +646,15 @@ window.handleEditDeckTagsTrigger = async (deckId, deckName) => {
         "Voltron", "+1/+1 Counters"
     ];
 
+    // Inside handleEditDeckTagsTrigger function
     const body = `
         <div style="text-align:left;">
             <p style="font-size:0.8rem; color:var(--text-dim); margin-bottom:15px;">Update tags for <b>${deckName}</b></p>
             <div id="editTagGrid" class="tag-selector-grid">
                 ${allAvailableTags.map(tag => `
                     <label class="tag-checkbox">
-                        <input type="checkbox" value="${tag}" ${currentTags.includes(tag) ? 'checked' : ''}> ${tag}
+                        <span>${tag}</span>
+                        <input type="checkbox" value="${tag}" ${currentTags.includes(tag) ? 'checked' : ''}>
                     </label>
                 `).join('')}
             </div>
