@@ -322,16 +322,16 @@ onSnapshot(query(collection(db, "decks")), (snapshot) => {
                     </div>
                 </div>
                 <div class="stat-badges">
-                    <div class="stat-badge-pill pill-won">WON <b>${wins}</b></div>
-                    <div class="stat-badge-pill pill-kos">KOS <b>${deck.knockouts || 0}</b></div>
-                    <div class="stat-badge-pill pill-sol">SOL <b>${deck.solRingOpening || 0}</b></div>
-                    <div class="stat-badge-pill pill-blood">BLD <b>${deck.firstBloodCount || 0}</b></div>
-                    <div class="stat-badge-pill pill-ramp">RMP <b>${deck.mostRampCount || 0}</b></div>
-                    <div class="stat-badge-pill pill-draw">DRW <b>${deck.mostDrawCount || 0}</b></div>
-                    <div class="stat-badge-pill pill-first">1ST <b>${deck.wentFirstCount || 0}</b></div>
-                    <div class="stat-badge-pill pill-last">LST <b>${deck.wentLastCount || 0}</b></div>
-                    <div class="stat-badge-pill pill-fun">FUN <b>${deck.funCount || 0}</b></div>
-                    <div class="stat-badge-pill pill-impact">HI-IMP <b>${deck.impactCount || 0}</b></div>
+                    <div class="stat-badge-pill pill-won">WINS <b>${wins}</b></div>
+                    <div class="stat-badge-pill pill-kos">KILLS <b>${deck.knockouts || 0}</b></div>
+                    <div class="stat-badge-pill pill-sol">SOL RING <b>${deck.solRingOpening || 0}</b></div>
+                    <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${deck.firstBloodCount || 0}</b></div>
+                    <div class="stat-badge-pill pill-ramp">MOST RAMP <b>${deck.mostRampCount || 0}</b></div>
+                    <div class="stat-badge-pill pill-draw">MOST DRAW <b>${deck.mostDrawCount || 0}</b></div>
+                    <div class="stat-badge-pill pill-first">WENT FIRST <b>${deck.wentFirstCount || 0}</b></div>
+                    <div class="stat-badge-pill pill-last">WENT LAST <b>${deck.wentLastCount || 0}</b></div>
+                    <div class="stat-badge-pill pill-fun">DID ITS THING <b>${deck.funCount || 0}</b></div>
+                    <div class="stat-badge-pill pill-impact">HIGH IMPACT <b>${deck.impactCount || 0}</b></div>
                 </div>
             </div>
         `;
