@@ -86,13 +86,35 @@ const getPlayerColor = (name) => {
 };
 
 const TAG_COLORS = {
-    "Aggro": "#ff4444", "Aristocrats": "#9c27b0", "Artifacts": "#607d8b",
-    "Big Mana": "#4caf50", "Blink": "#00bcd4", "Burn": "#ff5722",
-    "Combo": "#ffeb3b", "Control": "#2196f3", "Group Hug": "#8bc34a",
-    "Lands": "#14a35c", "Lifegain": "#fc79a4", "Midrange": "#ff9800",
-    "Mill": "#3f51b5", "Reanimator": "#212121", "Spellslinger": "#03a9f4",
-    "Stax": "#856b69", "Tokens": "#ffc107", "Tribal": "#cddc39",
-    "Voltron": "#ac0505", "+1/+1 Counters": "#009688"
+    "Aggro":            "#ff4444",
+    "Aristocrats":      "#9c27b0",
+    "Artifacts":        "#607d8b",
+    "Big Mana":         "#4caf50",
+    "Blink":            "#00bcd4",
+    "Burn":             "#ff5722",
+    "Combo":            "#ffeb3b",
+    "Control":          "#2196f3",
+    "Group Hug":        "#8bc34a",
+    "Lands":            "#14a35c",
+    "Lifegain":         "#fc79a4",
+    "Midrange":         "#ff9800",
+    "Mill":             "#3f51b5",
+    "Reanimator":       "#212121",
+    "Spellslinger":     "#03a9f4",
+    "Stax":             "#856b69",
+    "Tokens":           "#ffc107",
+    "Tribal":           "#cddc39",
+    "Voltron":          "#ac0505",
+    "+1/+1 Counters":   "#009688",
+    "Mono Color":       "#9e9e9e",
+    "Budget":           "#43a047",
+    "Recursion":        "#673ab7",
+    "Go Wide":          "#fdd835",
+    "Goad":             "#e53935",
+    "Graveyard":        "#464646ff",
+    "Enchantress":      "#ab47bc",
+    "Storm":            "#1e88e5",
+    "Theft":            "#f4511e"
 };
 
 const getTagStyle = (tag) => {
@@ -640,10 +662,14 @@ window.handleEditDeckTagsTrigger = async (deckId, deckName) => {
     
     // Get all possible tags from the existing UI list
     const allAvailableTags = [
-        "Aggro", "Aristocrats", "Artifacts", "Big Mana", "Blink", "Burn", 
-        "Combo", "Control", "Group Hug", "Lands", "Lifegain", "Midrange", 
-        "Mill", "Reanimator", "Spellslinger", "Stax", "Tokens", "Tribal", 
-        "Voltron", "+1/+1 Counters"
+        "Aggro",        "Aristocrats",  "Artifacts",    "Big Mana",
+        "Blink",        "Burn",         "Combo",        "Control",
+        "Group Hug",    "Lands",        "Lifegain",     "Midrange", 
+        "Mill",         "Reanimator",   "Spellslinger", "Stax",    
+        "Tokens",       "Tribal",       "Voltron",      "+1/+1 Counters",
+        "Mono Color",   "Budget",       "Recursion",    "Go Wide",
+        "Goad",         "Graveyard",    "Enchantress",  "Storm",
+        "Theft"
     ];
 
     // Inside handleEditDeckTagsTrigger function
