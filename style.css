@@ -234,9 +234,15 @@ button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700;
     width: 100%;             /* Critical: fill the entire grid column */
     box-sizing: border-box;  /* Ensures padding doesn't overflow the width */
 }
+.tag-checkbox span {
+    flex: 1;                 /* Takes up available space, pushing checkbox right */
+    text-align: left;        /* Explicitly left-align the text */
+}
 .tag-checkbox input[type="checkbox"] {
     margin: 0;
+    margin-left: 8px;        /* Small gap between text and checkbox */
     cursor: pointer;
+    flex-shrink: 0;          /* Prevents checkbox from shrinking */
 }
 .tag-selector-hidden { display: none; }
 .tag-selector-visible { display: block; }
