@@ -60,6 +60,7 @@ let selectedNewPlayerColor = "#3d85ff";
 let initialPopulated = false;
 let selectedInsightPlayer = null;
 let selectedInsightDeckId = null;
+let activePieChart = null;
 
 const MODERN_COLORS = [
     "#16171a", "#7f0622", "#d62411", "#ff8426", 
@@ -805,34 +806,21 @@ async function finalizeDeckUpdate(deckId) {
     }
 }
 
-// Replace the current renderInsightTab function in app.js
 function renderInsightTab() {
     const container = document.getElementById('insightMainContent');
     const backBtn = document.getElementById('backToPlayersBtn');
     const title = document.getElementById('insightTitle');
 
     if (!selectedInsightPlayer) {
-        // --- FIX: Show Player Selection Grid if no player is selected ---
         selectedInsightDeckId = null;
         backBtn.style.display = 'none';
         title.textContent = "Select a Player";
-        
-        container.innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 20px;">
-                ${allPlayers.map(p => `
-                    <button class="roster-tab-btn" 
-                            style="background-color: ${p.color}; border-color: ${p.color}; text-align: center; height: 80px;"
-                            onclick="selectInsightPlayer('${p.name}')">
-                        ${p.name}
-                    </button>
-                `).join('')}
-            </div>
-        `;
+        container.innerHTML = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 20px;">
+            ${allPlayers.map(p => `<button class="roster-tab-btn" style="background-color: ${p.color}; border-color: ${p.color}; text-align: center; height: 80px;" onclick="selectInsightPlayer('${p.name}')">${p.name}</button>`).join('')}
+        </div>`;
     } else {
-        // --- Existing Arsenal View ---
         backBtn.style.display = 'block';
         title.textContent = `${selectedInsightPlayer}'s Arsenal`;
-        
         const playerDecks = allDecks.filter(d => d.player === selectedInsightPlayer);
 
         container.innerHTML = `
@@ -843,55 +831,38 @@ function renderInsightTab() {
                         const losses = deck.losses || 0;
                         const rate = (wins + losses) > 0 ? ((wins / (wins + losses)) * 100).toFixed(0) : 0;
                         const bgArt = deck.commanderImage ? `url(${deck.commanderImage})` : 'none';
-                        const isSelected = deck.id === selectedInsightDeckId;
-
                         return `
-                            <div class="deck-card ${isSelected ? 'selected' : ''}" 
-                                 onclick="selectInsightDeck('${deck.id}')"
-                                 style="--commander-art: ${bgArt}; cursor: pointer;">
+                            <div class="deck-card ${deck.id === selectedInsightDeckId ? 'selected' : ''}" 
+                                 onclick="selectInsightDeck('${deck.id}')" style="--commander-art: ${bgArt}; cursor: pointer;">
                                 <div class="deck-header">
-                                    <div>
-                                        <h3 style="margin:0;">${deck.deckName}</h3>
-                                        <div style="font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
-                                            COMMANDER: <b>${deck.commander || 'n/a'}</b>
-                                        </div>
-                                    </div>
-                                    <div style="display: flex; align-items: flex-start; gap: 10px;">
-                                        <button class="player-edit-btn" onclick="event.stopPropagation(); handleEditDeckSettingsTrigger('${deck.id}')">✏️</button>
-                                        <div class="win-rate-badge">
-                                            <span class="win-rate-val">${rate}%</span>
-                                            <span class="win-rate-label">WIN RATE</span>
-                                        </div>
-                                    </div>
+                                    <h3 style="margin:0;">${deck.deckName}</h3>
+                                    <div class="win-rate-badge"><span class="win-rate-val">${rate}%</span></div>
                                 </div>
                                 <div class="stat-badges">
                                     <div class="stat-badge-pill pill-won">WINS <b>${wins}</b></div>
                                     <div class="stat-badge-pill pill-kos">KILLS <b>${deck.knockouts || 0}</b></div>
-                                    <div class="stat-badge-pill pill-sol">SOL <b>${deck.solRingOpening || 0}</b></div>
                                 </div>
-                            </div>
-                        `;
+                            </div>`;
                     }).join('')}
                 </div>
-
                 <div class="insight-stats-card">
+                    <div class="pie-chart-container" style="margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
+                        <label style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; font-weight:800; display:block; margin-bottom:10px; text-align:center;">Color Identity</label>
+                        <div style="height: 180px; position: relative;"><canvas id="colorPieChart"></canvas></div>
+                    </div>
                     <div class="chart-controls">
-                        <label style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; font-weight:800;">Compare Decks By:</label>
                         <select id="insightStatSelect" style="margin:0;">
-                            <option value="games">Total Games played</option>
+                            <option value="games">Total Games</option>
                             <option value="wins">Total Wins</option>
                         </select>
                     </div>
                     <canvas id="insightChart"></canvas>
                 </div>
-            </div>
-        `;
+            </div>`;
 
         initInsightChart(playerDecks, document.getElementById('insightStatSelect').value);
-        
-        document.getElementById('insightStatSelect').onchange = (e) => {
-            initInsightChart(playerDecks, e.target.value);
-        };
+        initColorPieChart(playerDecks);
+        document.getElementById('insightStatSelect').onchange = (e) => initInsightChart(playerDecks, e.target.value);
     }
 }
 
@@ -984,6 +955,72 @@ function initInsightChart(decks, stat = 'games') {
                 tooltip: {
                     backgroundColor: 'rgba(0,0,0,0.8)',
                     titleFont: { weight: 'bold' }
+                }
+            }
+        }
+    });
+}
+
+function initColorPieChart(decks) {
+    const canvas = document.getElementById('colorPieChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (activePieChart) activePieChart.destroy();
+
+    // 1. Calculate weighted color distribution
+    const colorTotals = { W: 0, U: 0, B: 0, R: 0, G: 0, Colorless: 0 };
+    
+    decks.forEach(deck => {
+        const colors = deck.colorIdentity || [];
+        if (colors.length === 0) {
+            colorTotals.Colorless += 1;
+        } else {
+            const weight = 1 / colors.length;
+            colors.forEach(c => {
+                if (colorTotals.hasOwnProperty(c)) colorTotals[c] += weight;
+            });
+        }
+    });
+
+    const colorMap = {
+        W: { label: 'White', color: '#f8f1d1' }, 
+        U: { label: 'Blue', color: '#0e68ab' },  
+        B: { label: 'Black', color: '#150b00' }, 
+        R: { label: 'Red', color: '#d3202a' },   
+        G: { label: 'Green', color: '#00733e' }, 
+        Colorless: { label: 'Colorless', color: '#90adbb' }
+    };
+
+    const labels = [];
+    const data = [];
+    const bgColors = [];
+
+    Object.keys(colorTotals).forEach(key => {
+        if (colorTotals[key] > 0) {
+            labels.push(colorMap[key].label);
+            data.push(colorTotals[key].toFixed(2));
+            bgColors.push(colorMap[key].color);
+        }
+    });
+
+    activePieChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: bgColors,
+                borderWidth: 1,
+                borderColor: 'var(--surface)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { color: '#8e9297', font: { size: 10, weight: 'bold' }, padding: 15 }
                 }
             }
         }
