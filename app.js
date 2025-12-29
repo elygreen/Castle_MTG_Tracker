@@ -58,6 +58,8 @@ let allPlayers = [];
 let selectedRosterPlayer = null;
 let selectedNewPlayerColor = "#3d85ff"; 
 let initialPopulated = false;
+let selectedInsightPlayer = null;
+let selectedInsightDeckId = null;
 
 const MODERN_COLORS = [
     "#16171a", "#7f0622", "#d62411", "#ff8426", 
@@ -271,13 +273,7 @@ onSnapshot(query(collection(db, "players"), orderBy("name", "asc")), (snapshot) 
         container.appendChild(controls);
         rosterTabs.appendChild(container);
     });
-
-    // FIXED: Simplified initialization check to prevent double-spawning
-    if (!initialPopulated && allPlayers.length > 0 && allDecks.length > 0) {
-        const defaultPod = ["Ely", "Lucian", "Ryan", "Joey"];
-        defaultPod.forEach(name => addParticipant(name));
-        initialPopulated = true;
-    }
+    tryInitializeDefaultPod();
 });
 
 onSnapshot(query(collection(db, "decks")), (snapshot) => {
@@ -338,14 +334,10 @@ onSnapshot(query(collection(db, "decks")), (snapshot) => {
         `;
         deckList.appendChild(li);
     });
+
     if (selectedRosterPlayer) updateRosterView();
-    
-    // FIXED: Catch initialization if decks load after players
-    if (!initialPopulated && allPlayers.length > 0 && allDecks.length > 0) {
-        const defaultPod = ["Ely", "Lucian", "Ryan", "Joey"];
-        defaultPod.forEach(name => addParticipant(name));
-        initialPopulated = true;
-    }
+    if (selectedInsightPlayer) renderInsightTab();
+    tryInitializeDefaultPod();
 });
 
 onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(20)), (snapshot) => {
@@ -640,18 +632,36 @@ window.handleEditMatchTrigger = async (matchId) => {
     openModal("Change Winner", "Select the actual winner. Stat totals will update automatically.", actions);
 };
 
+window.selectInsightDeck = (deckId) => {
+    selectedInsightDeckId = deckId;
+    renderInsightTab(); // Re-render to update the chart and list highlights
+};
+
+
 async function finalizeMatchEdit(matchId, newWinnerDeckId, playerName, deckName) {
     const batch = writeBatch(db);
     const matchRef = doc(db, "matches", matchId);
     const matchSnap = await getDoc(matchRef);
     const matchData = matchSnap.data();
+    
     const oldWinner = matchData.participants.find(p => p.win === true);
-    let oldWinnerId = oldWinner ? oldWinner.deckId : null;
-    let targetNewId = newWinnerDeckId;
-    const updatedParticipants = matchData.participants.map(p => ({ ...p, win: (p.player === playerName && p.deckName === deckName) }));
+    const oldWinnerId = oldWinner ? oldWinner.deckId : null;
+
+    // 1. Update the Match History record
+    const updatedParticipants = matchData.participants.map(p => ({ 
+        ...p, 
+        win: p.deckId === newWinnerDeckId // Use ID for certainty
+    }));
     batch.update(matchRef, { participants: updatedParticipants });
-    if (oldWinnerId && oldWinnerId !== targetNewId) { batch.update(doc(db, "decks", oldWinnerId), { wins: increment(-1), losses: increment(1) }); }
-    if (targetNewId && oldWinnerId !== targetNewId) { batch.update(doc(db, "decks", targetNewId), { wins: increment(1), losses: increment(-1) }); }
+
+    // 2. Adjust global deck stats
+    if (oldWinnerId && oldWinnerId !== newWinnerDeckId) { 
+        batch.update(doc(db, "decks", oldWinnerId), { wins: increment(-1), losses: increment(1) }); 
+    }
+    if (newWinnerDeckId && oldWinnerId !== newWinnerDeckId) { 
+        batch.update(doc(db, "decks", newWinnerDeckId), { wins: increment(1), losses: increment(-1) }); 
+    }
+    
     await batch.commit();
 }
 
@@ -699,6 +709,11 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById(btn.dataset.tab).classList.add('active');
+        
+        // Trigger specific render if Insight tab is clicked
+        if (btn.dataset.tab === 'insight') {
+            renderInsightTab();
+        }
     };
 });
 
@@ -707,11 +722,16 @@ window.handleEditDeckSettingsTrigger = async (deckId) => {
     const currentTags = deck.deckTags || [];
     
     const allAvailableTags = [
-        "Aggro", "Aristocrats", "Artifacts", "Big Mana", "Blink", "Burn", 
-        "Combo", "Control", "Group Hug", "Lands", "Lifegain", "Midrange", 
-        "Mill", "Reanimator", "Spellslinger", "Stax", "Tokens", "Tribal", 
-        "Voltron", "+1/+1 Counters", "Mono Color", "Budget", "Recursion", 
-        "Go Wide", "Goad", "Graveyard", "Enchantress", "Storm", "Theft"
+        "Aggro", "Aristocrats", "Artifacts",
+        "Big Mana", "Blink", "Burn", 
+        "Combo", "Control", "Group Hug",
+        "Lands", "Lifegain", "Midrange", 
+        "Mill", "Reanimator", "Spellslinger",
+        "Stax", "Tokens", "Tribal", 
+        "Voltron", "+1/+1 Counters", "Mono Color",
+        "Budget", "Recursion",  "Go Wide",
+        "Goad", "Graveyard", "Enchantress",
+        "Storm", "Theft"
     ];
 
     const body = `
@@ -783,4 +803,189 @@ async function finalizeDeckUpdate(deckId) {
         console.error("Error updating deck:", error);
         alert("Failed to update deck.");
     }
+}
+
+// Replace the current renderInsightTab function in app.js
+function renderInsightTab() {
+    const container = document.getElementById('insightMainContent');
+    const backBtn = document.getElementById('backToPlayersBtn');
+    const title = document.getElementById('insightTitle');
+
+    if (!selectedInsightPlayer) {
+        // --- FIX: Show Player Selection Grid if no player is selected ---
+        selectedInsightDeckId = null;
+        backBtn.style.display = 'none';
+        title.textContent = "Select a Player";
+        
+        container.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 20px;">
+                ${allPlayers.map(p => `
+                    <button class="roster-tab-btn" 
+                            style="background-color: ${p.color}; border-color: ${p.color}; text-align: center; height: 80px;"
+                            onclick="selectInsightPlayer('${p.name}')">
+                        ${p.name}
+                    </button>
+                `).join('')}
+            </div>
+        `;
+    } else {
+        // --- Existing Arsenal View ---
+        backBtn.style.display = 'block';
+        title.textContent = `${selectedInsightPlayer}'s Arsenal`;
+        
+        const playerDecks = allDecks.filter(d => d.player === selectedInsightPlayer);
+
+        container.innerHTML = `
+            <div class="insight-grid">
+                <div id="insightDeckList" style="display: flex; flex-direction: column; gap: 15px;">
+                    ${playerDecks.map(deck => {
+                        const wins = deck.wins || 0;
+                        const losses = deck.losses || 0;
+                        const rate = (wins + losses) > 0 ? ((wins / (wins + losses)) * 100).toFixed(0) : 0;
+                        const bgArt = deck.commanderImage ? `url(${deck.commanderImage})` : 'none';
+                        const isSelected = deck.id === selectedInsightDeckId;
+
+                        return `
+                            <div class="deck-card ${isSelected ? 'selected' : ''}" 
+                                 onclick="selectInsightDeck('${deck.id}')"
+                                 style="--commander-art: ${bgArt}; cursor: pointer;">
+                                <div class="deck-header">
+                                    <div>
+                                        <h3 style="margin:0;">${deck.deckName}</h3>
+                                        <div style="font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
+                                            COMMANDER: <b>${deck.commander || 'n/a'}</b>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                        <button class="player-edit-btn" onclick="event.stopPropagation(); handleEditDeckSettingsTrigger('${deck.id}')">✏️</button>
+                                        <div class="win-rate-badge">
+                                            <span class="win-rate-val">${rate}%</span>
+                                            <span class="win-rate-label">WIN RATE</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="stat-badges">
+                                    <div class="stat-badge-pill pill-won">WINS <b>${wins}</b></div>
+                                    <div class="stat-badge-pill pill-kos">KILLS <b>${deck.knockouts || 0}</b></div>
+                                    <div class="stat-badge-pill pill-sol">SOL <b>${deck.solRingOpening || 0}</b></div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+
+                <div class="insight-stats-card">
+                    <div class="chart-controls">
+                        <label style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; font-weight:800;">Compare Decks By:</label>
+                        <select id="insightStatSelect" style="margin:0;">
+                            <option value="games">Total Games played</option>
+                            <option value="wins">Total Wins</option>
+                        </select>
+                    </div>
+                    <canvas id="insightChart"></canvas>
+                </div>
+            </div>
+        `;
+
+        initInsightChart(playerDecks, document.getElementById('insightStatSelect').value);
+        
+        document.getElementById('insightStatSelect').onchange = (e) => {
+            initInsightChart(playerDecks, e.target.value);
+        };
+    }
+}
+
+// Global scope helpers for onclick
+window.selectInsightPlayer = (name) => {
+    selectedInsightPlayer = name;
+    renderInsightTab();
+};
+
+document.getElementById('backToPlayersBtn').onclick = () => {
+    selectedInsightPlayer = null;
+    renderInsightTab();
+};
+
+function tryInitializeDefaultPod() {
+    if (!initialPopulated && allPlayers.length > 0 && allDecks.length > 0) {
+        const defaultPod = ["Ely", "Lucian", "Ryan", "Joey"];
+        // Clear container first to be safe
+        document.getElementById('gameParticipants').innerHTML = '';
+        defaultPod.forEach(name => addParticipant(name));
+        initialPopulated = true;
+    }
+}
+
+let activeChart = null;
+
+function initInsightChart(decks, stat = 'games') {
+    const canvas = document.getElementById('insightChart');
+    const ctx = canvas.getContext('2d');
+    if (activeChart) activeChart.destroy();
+
+    const calculatedHeight = (decks.length * 25) + 100;
+    canvas.style.height = `${calculatedHeight}px`;
+    // ----------------------------------------
+
+    const PALETTE = ["#3d85ff", "#ff4444", "#4caf50", "#ffeb3b", "#9c27b0", "#ff9800", "#00bcd4", "#e91e63"];
+    
+    const dataLabels = decks.map(d => d.deckName);
+    const dataValues = decks.map(d => stat === 'wins' ? (d.wins || 0) : ((d.wins || 0) + (d.losses || 0)));
+
+    const backgroundColors = decks.map((d, i) => {
+        const baseColor = PALETTE[i % PALETTE.length];
+        if (selectedInsightDeckId === null) return baseColor + "cc"; 
+        return d.id === selectedInsightDeckId ? baseColor : baseColor + "22";
+    });
+
+    const borderColors = decks.map((d, i) => {
+        const baseColor = PALETTE[i % PALETTE.length];
+        if (selectedInsightDeckId === null) return baseColor;
+        return d.id === selectedInsightDeckId ? baseColor : baseColor + "44";
+    });
+
+    activeChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: dataLabels,
+            datasets: [{
+                data: dataValues,
+                backgroundColor: backgroundColors,
+                borderColor: borderColors,
+                borderWidth: 2,
+                borderRadius: 4,
+                barPercentage: 0.5,
+                categoryPercentage: 0.8
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false, // --- FIX: Allows the chart to respect our calculated height ---
+            scales: {
+                x: { 
+                    beginAtZero: true, 
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: '#8e9297' }
+                },
+                y: { 
+                    grid: { display: false },
+                    ticks: { 
+                        color: (context) => {
+                            const deckId = decks[context.index]?.id;
+                            return deckId === selectedInsightDeckId ? '#ffffff' : '#8e9297';
+                        },
+                        font: { weight: 'bold', size: 11 } 
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleFont: { weight: 'bold' }
+                }
+            }
+        }
+    });
 }
