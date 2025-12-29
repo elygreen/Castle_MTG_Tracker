@@ -404,3 +404,26 @@ textarea:focus {
     font-style: italic;
     line-height: 1.4;
 }
+
+.deck-card {
+    position: relative;
+    overflow: hidden; /* Clips the background image */
+}
+
+/* Add a pseudo-element for the background art */
+.deck-card::before {
+    content: "";
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    background-image: var(--commander-art);
+    background-size: cover;
+    background-position: center 20%;
+    opacity: 0.15; /* Adjust for legibility */
+    z-index: 0;
+}
+
+/* Ensure content stays above the art */
+.deck-header, .stat-badges {
+    position: relative;
+    z-index: 1;
+}

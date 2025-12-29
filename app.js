@@ -300,8 +300,9 @@ onSnapshot(query(collection(db, "decks")), (snapshot) => {
         
         const li = document.createElement('li');
         li.className = 'deck-card-container';
+        const bgArt = deck.commanderImage ? `url(${deck.commanderImage})` : 'none';
         li.innerHTML = `
-            <div class="deck-card">
+            <div class="deck-card" style="--commander-art: ${bgArt}">
                 <div class="deck-header">
                     <div>
                         <h3 style="margin:0; font-size:1.1rem;">${deck.deckName}</h3>
@@ -377,14 +378,15 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
                             ${p.win ? '<div class="stat-badge-pill pill-won">WIN</div>' : ''}
                             ${p.kos !== "N/A" && p.kos > 0 ? `<div class="stat-badge-pill pill-kos">KOS <b>${p.kos}</b></div>` : ''}
                             ${p.funRating > 0 ? `<div class="stat-badge-pill pill-fun">★ <b>${p.funRating}</b></div>` : ''}
-                            ${p.sol ? `<div class="stat-badge-pill pill-sol">SOL</div>` : ''}
-                            ${p.blood ? `<div class="stat-badge-pill pill-blood">BLD</div>` : ''}
-                            ${p.ramp ? `<div class="stat-badge-pill pill-ramp">RMP</div>` : ''}
-                            ${p.draw ? `<div class="stat-badge-pill pill-draw">DRW</div>` : ''}
+                            ${p.sol ? `<div class="stat-badge-pill pill-sol">SOL RING</div>` : ''}
+                            ${p.blood ? `<div class="stat-badge-pill pill-blood">FIRST BLOOD</div>` : ''}
+                            ${p.ramp ? `<div class="stat-badge-pill pill-ramp">MOST RAMP</div>` : ''}
+                            ${p.draw ? `<div class="stat-badge-pill pill-draw">MOST DRAW</div>` : ''}
+                            ${p.fun ? `<div class="stat-badge-pill pill-fun">DID ITS THING</div>` : ''}
+                            ${p.impact ? `<div class="stat-badge-pill pill-impact">HIGH IMPACT</div>` : ''}
                             ${p.first ? `<div class="stat-badge-pill pill-first">1ST</div>` : ''}
-                            ${p.last ? `<div class="stat-badge-pill pill-last">LST</div>` : ''}
-                            ${p.fun ? `<div class="stat-badge-pill pill-fun">DID IT</div>` : ''}
-                            ${p.impact ? `<div class="stat-badge-pill pill-impact">HI-IMP</div>` : ''}
+                            ${p.last ? `<div class="stat-badge-pill pill-last">LAST</div>` : ''}
+                            ${p.impact ? `<div class="stat-badge-pill pill-impact">HIGH IMPACT</div>` : ''}
                         </div>
                     </div>
                 `).join('')}
@@ -427,7 +429,7 @@ function updateRosterView() {
                     <div class="deck-tags-grid">${(d.deckTags || []).map(t => `<span class="individual-tag" style="${getTagStyle(t)}">${t}</span>`).join('')}</div>
                 </div>
                 <div class="player-controls">
-                    <button class="player-edit-btn" onclick="handleEditDeckTagsTrigger('${d.id}', '${d.deckName.replace(/'/g, "\\'")}')">✏️</button>
+                    <button class="player-edit-btn" onclick="handleEditDeckSettingsTrigger('${d.id}')">✏️</button>
                     <button class="player-del-btn" onclick="handleDeckDeletionTrigger('${d.id}', '${d.deckName.replace(/'/g, "\\'")}', '${d.player}')">✕</button>
                 </div>
             </div>
@@ -460,21 +462,65 @@ document.getElementById('addPlayerBtn').onclick = async () => {
 
 document.getElementById('addDeckBtn').onclick = async () => {
     const player = document.getElementById('playerSelect').value;
-    const deckNameInput = document.getElementById('deckName');
-    const deckName = deckNameInput.value.trim();
+    const deckName = document.getElementById('deckName').value.trim();
+    const cmdInput = document.getElementById('commanderName').value.trim();
     const checkedTags = Array.from(document.querySelectorAll('#tagSelector input:checked')).map(cb => cb.value);
+
     if (!player || !deckName) return;
-    if (deckName.toLowerCase() === 'misc') { alert("Cannot manually create 'Misc'."); return; }
-    if (allDecks.some(d => d.player === player && d.deckName.toLowerCase() === deckName.toLowerCase())) return;
+
+    let commanderData = {
+        name: "n/a",
+        image: "",
+        colorIdentity: []
+    };
+
+    // --- Scryfall API Fetch ---
+    if (cmdInput) {
+        try {
+            // Fuzzy search allows for partial names or minor typos
+            const response = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(cmdInput)}`);
+            
+            if (response.ok) {
+                const card = await response.json();
+                commanderData = {
+                    name: card.name,
+                    image: card.image_uris?.art_crop || "", // High-quality art crop
+                    colorIdentity: card.color_identity || [] // e.g., ["W", "U", "B"]
+                };
+            }
+        } catch (error) {
+            console.error("Scryfall lookup failed:", error);
+        }
+    }
+
+    // --- Save to Firebase ---
     await addDoc(collection(db, "decks"), {
-        player, deckName, deckTags: checkedTags, wins: 0, losses: 0, 
-        knockouts: 0, firstBloodCount: 0, mostRampCount: 0, 
-        mostDrawCount: 0, solRingOpening: 0, wentFirstCount: 0, 
-        wentLastCount: 0, funCount: 0, impactCount: 0,
-        funRatingTotal: 0, funRatingCount: 0
+        player,
+        deckName,
+        commander: commanderData.name,
+        commanderImage: commanderData.image,
+        colorIdentity: commanderData.colorIdentity,
+        deckTags: checkedTags,
+        wins: 0,
+        losses: 0,
+        knockouts: 0,
+        solRingOpening: 0,
+        firstBloodCount: 0,
+        mostRampCount: 0,
+        mostDrawCount: 0,
+        wentFirstCount: 0,
+        wentLastCount: 0,
+        funCount: 0,
+        impactCount: 0,
+        funRatingTotal: 0,
+        funRatingCount: 0
     });
-    deckNameInput.value = '';
+
+    // Reset UI
+    document.getElementById('deckName').value = '';
+    document.getElementById('commanderName').value = '';
     document.querySelectorAll('#tagSelector input').forEach(cb => cb.checked = false);
+    alert(`Deck Saved with Commander: ${commanderData.name}`);
 };
 
 document.getElementById('addParticipantBtn').onclick = () => addParticipant();
@@ -656,56 +702,85 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     };
 });
 
-window.handleEditDeckTagsTrigger = async (deckId, deckName) => {
+window.handleEditDeckSettingsTrigger = async (deckId) => {
     const deck = allDecks.find(d => d.id === deckId);
     const currentTags = deck.deckTags || [];
     
-    // Get all possible tags from the existing UI list
     const allAvailableTags = [
-        "Aggro",        "Aristocrats",  "Artifacts",    "Big Mana",
-        "Blink",        "Burn",         "Combo",        "Control",
-        "Group Hug",    "Lands",        "Lifegain",     "Midrange", 
-        "Mill",         "Reanimator",   "Spellslinger", "Stax",    
-        "Tokens",       "Tribal",       "Voltron",      "+1/+1 Counters",
-        "Mono Color",   "Budget",       "Recursion",    "Go Wide",
-        "Goad",         "Graveyard",    "Enchantress",  "Storm",
-        "Theft"
+        "Aggro", "Aristocrats", "Artifacts", "Big Mana", "Blink", "Burn", 
+        "Combo", "Control", "Group Hug", "Lands", "Lifegain", "Midrange", 
+        "Mill", "Reanimator", "Spellslinger", "Stax", "Tokens", "Tribal", 
+        "Voltron", "+1/+1 Counters", "Mono Color", "Budget", "Recursion", 
+        "Go Wide", "Goad", "Graveyard", "Enchantress", "Storm", "Theft"
     ];
 
-    // Inside handleEditDeckTagsTrigger function
     const body = `
-        <div style="text-align:left;">
-            <p style="font-size:0.8rem; color:var(--text-dim); margin-bottom:15px;">Update tags for <b>${deckName}</b></p>
-            <div id="editTagGrid" class="tag-selector-grid">
-                ${allAvailableTags.map(tag => `
-                    <label class="tag-checkbox">
-                        <span>${tag}</span>
-                        <input type="checkbox" value="${tag}" ${currentTags.includes(tag) ? 'checked' : ''}>
-                    </label>
-                `).join('')}
+        <div style="text-align:left; display: flex; flex-direction: column; gap: 12px;">
+            <div>
+                <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;">Deck Name</label>
+                <input type="text" id="editDeckName" value="${deck.deckName}" style="width:100%; margin-top:5px;">
+            </div>
+            <div>
+                <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;">Commander</label>
+                <input type="text" id="editCommanderName" value="${deck.commander || ''}" placeholder="e.g. Atraxa" style="width:100%; margin-top:5px;">
+            </div>
+            <div>
+                <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; display:block; margin-bottom:8px;">Tags</label>
+                <div id="editTagGrid" class="tag-selector-grid">
+                    ${allAvailableTags.map(tag => `
+                        <label class="tag-checkbox">
+                            <span>${tag}</span>
+                            <input type="checkbox" value="${tag}" ${currentTags.includes(tag) ? 'checked' : ''}>
+                        </label>
+                    `).join('')}
+                </div>
             </div>
         </div>
     `;
 
-    openModal(`Edit Tags`, body, [
+    openModal(`Edit Deck Settings`, body, [
         { 
-            label: "Save Tags", 
+            label: "Save Changes", 
             color: "var(--success)", 
-            onClick: () => finalizeDeckTagUpdate(deckId) 
+            onClick: () => finalizeDeckUpdate(deckId) 
         }
     ]);
 };
 
-async function finalizeDeckTagUpdate(deckId) {
-    const checkedTags = Array.from(document.querySelectorAll('#editTagGrid input:checked'))
-                            .map(cb => cb.value);
+async function finalizeDeckUpdate(deckId) {
+    const newName = document.getElementById('editDeckName').value.trim();
+    const newCmdInput = document.getElementById('editCommanderName').value.trim();
+    const checkedTags = Array.from(document.querySelectorAll('#editTagGrid input:checked')).map(cb => cb.value);
     
+    if (!newName) return;
+
+    let updateData = {
+        deckName: newName,
+        deckTags: checkedTags
+    };
+
+    // If commander name changed, fetch new art/colors
+    if (newCmdInput) {
+        try {
+            const response = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(newCmdInput)}`);
+            if (response.ok) {
+                const card = await response.json();
+                updateData.commander = card.name;
+                updateData.commanderImage = card.image_uris?.art_crop || "";
+                updateData.colorIdentity = card.color_identity || [];
+            } else {
+                updateData.commander = newCmdInput; // Keep what they typed if not found
+            }
+        } catch (error) {
+            console.error("Scryfall update failed:", error);
+        }
+    }
+
     try {
-        await updateDoc(doc(db, "decks", deckId), {
-            deckTags: checkedTags
-        });
+        await updateDoc(doc(db, "decks", deckId), updateData);
+        alert("Deck updated successfully!");
     } catch (error) {
-        console.error("Error updating tags: ", error);
-        alert("Failed to update tags.");
+        console.error("Error updating deck:", error);
+        alert("Failed to update deck.");
     }
 }
