@@ -510,3 +510,38 @@ textarea:focus {
 }
     }
 }
+
+/* Container that hides the "off-screen" slide */
+.insight-viewport {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    /* Added: ensures the shadow of the content inside doesn't bleed out */
+    padding: 5px 0; 
+    margin: -5px 0;
+}
+
+/* The long track containing both views */
+.insight-slider {
+    display: flex;
+    width: 200%;
+    /* Refined: ensures smooth hardware-accelerated movement */
+    will-change: transform;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Individual slides */
+.insight-slide {
+    width: 50%;
+    flex-shrink: 0;
+    /* Added: Ensures padding/margins don't push the width past 50% */
+    box-sizing: border-box; 
+    /* Added: Provides a tiny gap so shadows don't touch the seam */
+    padding-right: 15px; 
+}
+
+/* State classes to trigger the slide */
+.show-detail {
+    /* Refined: translate3d is better for performance/flicker prevention */
+    transform: translate3d(-50%, 0, 0);
+}

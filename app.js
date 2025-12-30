@@ -821,23 +821,42 @@ async function finalizeDeckUpdate(deckId) {
 }
 
 function renderInsightTab() {
-    const container = document.getElementById('insightMainContent');
+    const playerListContainer = document.getElementById('insightPlayerList');
+    const detailContainer = document.getElementById('insightDetailView');
+    const slider = document.getElementById('insightSlider');
     const backBtn = document.getElementById('backToPlayersBtn');
     const title = document.getElementById('insightTitle');
 
+    // 1. ALWAYS render the selection list in the first slide
+    playerListContainer.innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 20px;">
+            ${allPlayers.map(p => `
+                <button class="roster-tab-btn" 
+                        style="background-color: ${p.color}; border-color: ${p.color}; text-align: center; height: 80px;" 
+                        onclick="selectInsightPlayer('${p.name}')">
+                    ${p.name}
+                </button>
+            `).join('')}
+        </div>`;
+
     if (!selectedInsightPlayer) {
+        // VIEW: PLAYER SELECTION
         selectedInsightDeckId = null;
         backBtn.style.display = 'none';
         title.textContent = "Select a Player";
-        container.innerHTML = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 20px;">
-            ${allPlayers.map(p => `<button class="roster-tab-btn" style="background-color: ${p.color}; border-color: ${p.color}; text-align: center; height: 80px;" onclick="selectInsightPlayer('${p.name}')">${p.name}</button>`).join('')}
-        </div>`;
+        slider.classList.remove('show-detail'); // Slide back to left
+        setTimeout(() => {
+            if (!selectedInsightPlayer) detailContainer.innerHTML = '';
+        }, 500);
     } else {
+        // VIEW: PLAYER DETAILS
         backBtn.style.display = 'block';
-        title.textContent = ""; // Clearing title as name is now in the hero section
+        title.textContent = ""; 
+        slider.classList.add('show-detail'); // Slide to right
+
         const playerDecks = allDecks.filter(d => d.player === selectedInsightPlayer);
 
-        // --- CALCULATE PLAYER TOTALS ---
+        // Calculate Totals
         const playerStats = playerDecks.reduce((acc, d) => ({
             games: acc.games + (d.wins || 0) + (d.losses || 0),
             wins: acc.wins + (d.wins || 0),
@@ -853,42 +872,37 @@ function renderInsightTab() {
         const winRate = playerStats.games > 0 ? ((playerStats.wins / playerStats.games) * 100).toFixed(1) : 0;
         const playerColor = getPlayerColor(selectedInsightPlayer);
 
-        container.innerHTML = `
+        detailContainer.innerHTML = `
             <div class="card" style="margin-bottom: 25px; padding: 25px; border-left: 5px solid ${playerColor}; background: linear-gradient(90deg, var(--surface) 0%, rgba(0,0,0,0.2) 100%);">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
                     <div>
                         <h1 style="margin: 0; font-size: 2.5rem; font-weight: 900; color: ${playerColor}; text-transform: uppercase; letter-spacing: -1px;">${selectedInsightPlayer}</h1>
-                        <p style="margin: 0; color: var(--text-dim); font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Overall Performance across ${playerDecks.length} Unique Decks</p>
+                        <p style="margin: 0; color: var(--text-dim); font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Overall Performance</p>
                     </div>
                     <div class="win-rate-badge" style="padding: 15px 25px; border-color: ${playerColor}44;">
                         <span class="win-rate-val" style="font-size: 2rem;">${winRate}%</span>
                         <span class="win-rate-label">TOTAL WIN RATE</span>
                     </div>
                 </div>
-
                 <div class="stat-badges" style="margin-top: 20px; background: rgba(0,0,0,0.3); padding: 15px; gap: 10px;">
-                    <div class="stat-badge-pill pill-won" style="padding: 8px 12px; font-size: 0.75rem;">1ST PLACE <b>${playerStats.wins}</b></div>
-                    <div class="stat-badge-pill" style="padding: 8px 12px; font-size: 0.75rem; background: rgba(255,255,255,0.1);">TOTAL GAMES <b>${playerStats.games}</b></div>
-                    <div class="stat-badge-pill pill-kos" style="padding: 8px 12px; font-size: 0.75rem;">TOTAL KILLS <b>${playerStats.kos}</b></div>
-                    <div class="stat-badge-pill pill-blood" style="padding: 8px 12px; font-size: 0.75rem;">FIRST BLOOD <b>${playerStats.blood}</b></div>
-                    <div class="stat-badge-pill pill-ramp" style="padding: 8px 12px; font-size: 0.75rem;">MOST RAMP <b>${playerStats.ramp}</b></div>
-                    <div class="stat-badge-pill pill-draw" style="padding: 8px 12px; font-size: 0.75rem;">MOST DRAW <b>${playerStats.draw}</b></div>
-                    <div class="stat-badge-pill pill-first" style="padding: 8px 12px; font-size: 0.75rem;">WENT FIRST <b>${playerStats.first}</b></div>
-                    <div class="stat-badge-pill pill-last" style="padding: 8px 12px; font-size: 0.75rem;">WENT LAST <b>${playerStats.last}</b></div>
-                    <div class="stat-badge-pill pill-impact" style="padding: 8px 12px; font-size: 0.75rem;">HIGH IMPACT <b>${playerStats.impact}</b></div>
+                    <div class="stat-badge-pill pill-won">1ST PLACE <b>${playerStats.wins}</b></div>
+                    <div class="stat-badge-pill" style="background: rgba(255,255,255,0.1);">GAMES <b>${playerStats.games}</b></div>
+                    <div class="stat-badge-pill pill-kos">KILLS <b>${playerStats.kos}</b></div>
+                    <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${playerStats.blood}</b></div>
+                    <div class="stat-badge-pill pill-ramp">MOST RAMP <b>${playerStats.ramp}</b></div>
+                    <div class="stat-badge-pill pill-draw">MOST DRAW <b>${playerStats.draw}</b></div>
+                    <div class="stat-badge-pill pill-first">WENT FIRST <b>${playerStats.first}</b></div>
+                    <div class="stat-badge-pill pill-last">WENT LAST <b>${playerStats.last}</b></div>
+                    <div class="stat-badge-pill pill-impact">HIGH IMPACT <b>${playerStats.impact}</b></div>
                 </div>
             </div>
 
             <div class="insight-grid">
                 <div id="insightDeckList" style="display: flex; flex-direction: column; gap: 15px;">
                     ${playerDecks.map(deck => {
-                        const wins = deck.wins || 0;
-                        const losses = deck.losses || 0;
-                        const total = wins + losses;
-                        const rate = total > 0 ? ((wins / total) * 100).toFixed(0) : 0;
-                        const tags = deck.deckTags || [];
+                        const total = (deck.wins || 0) + (deck.losses || 0);
+                        const rate = total > 0 ? ((deck.wins / total) * 100).toFixed(0) : 0;
                         const bgArt = deck.commanderImage ? `url(${deck.commanderImage})` : 'none';
-                        
                         return `
                             <div class="deck-card ${deck.id === selectedInsightDeckId ? 'selected' : ''}" 
                                  onclick="selectInsightDeck('${deck.id}')" style="--commander-art: ${bgArt}; cursor: pointer;">
@@ -896,32 +910,31 @@ function renderInsightTab() {
                                     <div>
                                         <h3 style="margin:0;">${deck.deckName}</h3>
                                         <div class="deck-tags-grid" style="margin-top: 5px;">
-                                            ${tags.map(t => `<span class="individual-tag" style="${getTagStyle(t)}">${t}</span>`).join('')}
+                                            ${(deck.deckTags || []).map(t => `<span class="individual-tag" style="${getTagStyle(t)}">${t}</span>`).join('')}
                                         </div>
                                     </div>
                                     <div class="win-rate-badge"><span class="win-rate-val">${rate}%</span></div>
                                 </div>
                                 <div class="stat-badges">
-                                    <div class="stat-badge-pill pill-won">WINS <b>${wins}</b></div>
-                                    <div class="stat-badge-pill" style="background: rgba(255,255,255,0.1); color: var(--text-dim);">GAMES <b>${total}</b></div>
+                                    <div class="stat-badge-pill pill-won">WINS <b>${deck.wins || 0}</b></div>
+                                    <div class="stat-badge-pill" style="background:rgba(255,255,255,0.1);">GAMES <b>${total}</b></div>
                                     <div class="stat-badge-pill pill-kos">KILLS <b>${deck.knockouts || 0}</b></div>
-                                    <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${deck.firstBloodCount || 0}</b></div>
-                                    <div class="stat-badge-pill pill-ramp">MOST RAMP <b>${deck.mostRampCount || 0}</b></div>
-                                    <div class="stat-badge-pill pill-draw">MOST DRAW <b>${deck.mostDrawCount || 0}</b></div>
-                                    <div class="stat-badge-pill pill-first">WENT FIRST <b>${deck.wentFirstCount || 0}</b></div>
-                                    <div class="stat-badge-pill pill-last">WENT LAST <b>${deck.wentLastCount || 0}</b></div>
-                                    <div class="stat-badge-pill pill-impact">HIGH IMPACT <b>${deck.impactCount || 0}</b></div>
+                                    <div class="stat-badge-pill pill-blood">BLOOD <b>${deck.firstBloodCount || 0}</b></div>
+                                    <div class="stat-badge-pill pill-ramp">RAMP <b>${deck.mostRampCount || 0}</b></div>
+                                    <div class="stat-badge-pill pill-draw">DRAW <b>${deck.mostDrawCount || 0}</b></div>
+                                    <div class="stat-badge-pill pill-first">1ST <b>${deck.wentFirstCount || 0}</b></div>
+                                    <div class="stat-badge-pill pill-last">LAST <b>${deck.wentLastCount || 0}</b></div>
+                                    <div class="stat-badge-pill pill-impact">IMPACT <b>${deck.impactCount || 0}</b></div>
                                 </div>
                             </div>`;
                     }).join('')}
                 </div>
                 <div class="insight-stats-card">
                     <div class="pie-chart-container" style="margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
-                        <label style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; font-weight:800; display:block; margin-bottom:10px; text-align:center;">Commander Color Preference</label>
+                        <label style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; font-weight:800; display:block; margin-bottom:10px; text-align:center;">Color Preference</label>
                         <div style="height: 180px; position: relative;"><canvas id="colorPieChart"></canvas></div>
                     </div>
                     <div class="chart-controls">
-                        <label style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; font-weight:800;">View Stats By:</label>
                         <select id="insightStatSelect" style="margin:0;">
                             <option value="games">Total Games played</option>
                             <option value="wins">Total Wins</option>
@@ -931,11 +944,10 @@ function renderInsightTab() {
                 </div>
             </div>`;
 
-        // Draw Charts
+        // Initialize Charts
         const currentStat = document.getElementById('insightStatSelect').value;
         initInsightChart(playerDecks, currentStat);
         initColorPieChart(playerDecks);
-
         document.getElementById('insightStatSelect').onchange = (e) => initInsightChart(playerDecks, e.target.value);
     }
 }
