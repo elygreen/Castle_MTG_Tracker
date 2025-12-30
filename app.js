@@ -62,6 +62,7 @@ let selectedInsightPlayer = null;
 let selectedInsightDeckId = null;
 let activePieChart = null;
 
+
 const MODERN_COLORS = [
     "#16171a", "#7f0622", "#d62411", "#ff8426", 
     "#ffd100", "#f2f3ccff", "#ff80a4", "#ff2674",
@@ -467,19 +468,23 @@ document.getElementById('addDeckBtn').onclick = async () => {
         colorIdentity: []
     };
 
-    // --- Scryfall API Fetch ---
+    // Update the Scryfall Fetch block inside document.getElementById('addDeckBtn').onclick
     if (cmdInput) {
         try {
-            // Fuzzy search allows for partial names or minor typos
             const response = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(cmdInput)}`);
-            
             if (response.ok) {
                 const card = await response.json();
+
+                // --- FIX: Handle Double-Faced Cards ---
+                const isDoubleFaced = card.card_faces && !card.image_uris;
+                const frontFace = isDoubleFaced ? card.card_faces[0] : card;
+                
                 commanderData = {
                     name: card.name,
-                    image: card.image_uris?.art_crop || "", // High-quality art crop
-                    colorIdentity: card.color_identity || [] // e.g., ["W", "U", "B"]
+                    image: frontFace.image_uris?.art_crop || "",
+                    colorIdentity: card.color_identity || []
                 };
+                // --------------------------------------
             }
         } catch (error) {
             console.error("Scryfall lookup failed:", error);
@@ -721,88 +726,97 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 window.handleEditDeckSettingsTrigger = async (deckId) => {
     const deck = allDecks.find(d => d.id === deckId);
     const currentTags = deck.deckTags || [];
-    
-    const allAvailableTags = [
-        "Aggro", "Aristocrats", "Artifacts",
-        "Big Mana", "Blink", "Burn", 
-        "Combo", "Control", "Group Hug",
-        "Lands", "Lifegain", "Midrange", 
-        "Mill", "Reanimator", "Spellslinger",
-        "Stax", "Tokens", "Tribal", 
-        "Voltron", "+1/+1 Counters", "Mono Color",
-        "Budget", "Recursion",  "Go Wide",
-        "Goad", "Graveyard", "Enchantress",
-        "Storm", "Theft"
-    ];
+    const allAvailableTags = ["Aggro", "Aristocrats", "Artifacts", "Big Mana", "Blink", "Burn", "Combo", "Control", "Group Hug", "Lands", "Lifegain", "Midrange", "Mill", "Reanimator", "Spellslinger", "Stax", "Tokens", "Tribal", "Voltron", "+1/+1 Counters", "Mono Color", "Budget", "Recursion", "Go Wide", "Goad", "Graveyard", "Enchantress", "Storm", "Theft"];
 
     const body = `
         <div style="text-align:left; display: flex; flex-direction: column; gap: 12px;">
+            <div id="commanderPreview" style="height: 120px; border-radius: 8px; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid var(--border); position: relative;">
+                ${deck.commanderImage ? `<img src="${deck.commanderImage}" style="width:100%; height:100%; object-fit: cover; opacity: 0.6;">` : ''}
+                <div id="previewStatus" style="position: absolute; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                    ${deck.commander || 'No Commander Art'}
+                </div>
+            </div>
             <div>
                 <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;">Deck Name</label>
                 <input type="text" id="editDeckName" value="${deck.deckName}" style="width:100%; margin-top:5px;">
             </div>
             <div>
                 <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;">Commander</label>
-                <input type="text" id="editCommanderName" value="${deck.commander || ''}" placeholder="e.g. Atraxa" style="width:100%; margin-top:5px;">
-            </div>
-            <div>
-                <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; display:block; margin-bottom:8px;">Tags</label>
-                <div id="editTagGrid" class="tag-selector-grid">
-                    ${allAvailableTags.map(tag => `
-                        <label class="tag-checkbox">
-                            <span>${tag}</span>
-                            <input type="checkbox" value="${tag}" ${currentTags.includes(tag) ? 'checked' : ''}>
-                        </label>
-                    `).join('')}
+                <div style="display: flex; gap: 5px; margin-top: 5px;">
+                    <input type="text" id="editCommanderName" value="${deck.commander || ''}" placeholder="e.g. Atraxa" style="flex: 1; margin: 0;">
+                    <button id="fetchCmdBtn" class="btn-blue" style="padding: 0 15px;">Search</button>
                 </div>
+            </div>
+            <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; margin-top:10px;">Edit Tags</label>
+            <div id="editTagGrid" class="tag-selector-grid" style="max-height: 200px; overflow-y: auto;">
+                ${allAvailableTags.map(tag => `
+                    <label class="tag-checkbox">
+                        <span>${tag}</span>
+                        <input type="checkbox" value="${tag}" ${currentTags.includes(tag) ? 'checked' : ''}>
+                    </label>
+                `).join('')}
             </div>
         </div>
     `;
 
     openModal(`Edit Deck Settings`, body, [
-        { 
-            label: "Save Changes", 
-            color: "var(--success)", 
-            onClick: () => finalizeDeckUpdate(deckId) 
-        }
+        { label: "Save Changes", color: "var(--success)", onClick: () => finalizeDeckUpdate(deckId) }
     ]);
+
+    // Listener for the Live Search button
+    document.getElementById('fetchCmdBtn').onclick = async () => {
+        const input = document.getElementById('editCommanderName').value.trim();
+        const status = document.getElementById('previewStatus');
+        const preview = document.getElementById('commanderPreview');
+        
+        status.textContent = "Searching...";
+        try {
+            const response = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(input)}`);
+            if (response.ok) {
+                const card = await response.json();
+                
+                // Handle Double-Faced Cards (DFCs)
+                const isDoubleFaced = card.card_faces && !card.image_uris;
+                const frontFace = isDoubleFaced ? card.card_faces[0] : card;
+                const artCrop = frontFace.image_uris ? frontFace.image_uris.art_crop : "";
+
+                preview.innerHTML = `
+                    <img src="${artCrop}" style="width:100%; height:100%; object-fit: cover; opacity: 0.6;">
+                    <div id="previewStatus" style="position: absolute; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: #4caf50; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                        ✓ Found: ${card.name}
+                    </div>`;
+                document.getElementById('editCommanderName').value = card.name;
+            } else {
+                status.textContent = "Card not found";
+                status.style.color = "var(--danger)";
+            }
+        } catch (e) {
+            status.textContent = "Error fetching card";
+        }
+    };
 };
 
 async function finalizeDeckUpdate(deckId) {
     const newName = document.getElementById('editDeckName').value.trim();
-    const newCmdInput = document.getElementById('editCommanderName').value.trim();
+    const newCmdName = document.getElementById('editCommanderName').value.trim();
     const checkedTags = Array.from(document.querySelectorAll('#editTagGrid input:checked')).map(cb => cb.value);
+    const previewImg = document.querySelector('#commanderPreview img');
     
     if (!newName) return;
 
+    // Use the image already displayed in the preview
     let updateData = {
         deckName: newName,
+        commander: newCmdName,
+        commanderImage: previewImg ? previewImg.src : "",
         deckTags: checkedTags
     };
 
-    // If commander name changed, fetch new art/colors
-    if (newCmdInput) {
-        try {
-            const response = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(newCmdInput)}`);
-            if (response.ok) {
-                const card = await response.json();
-                updateData.commander = card.name;
-                updateData.commanderImage = card.image_uris?.art_crop || "";
-                updateData.colorIdentity = card.color_identity || [];
-            } else {
-                updateData.commander = newCmdInput; // Keep what they typed if not found
-            }
-        } catch (error) {
-            console.error("Scryfall update failed:", error);
-        }
-    }
-
     try {
         await updateDoc(doc(db, "decks", deckId), updateData);
-        alert("Deck updated successfully!");
+        // Removed browser alert for better UX
     } catch (error) {
         console.error("Error updating deck:", error);
-        alert("Failed to update deck.");
     }
 }
 
@@ -829,30 +843,47 @@ function renderInsightTab() {
                     ${playerDecks.map(deck => {
                         const wins = deck.wins || 0;
                         const losses = deck.losses || 0;
-                        const rate = (wins + losses) > 0 ? ((wins / (wins + losses)) * 100).toFixed(0) : 0;
+                        const total = wins + losses;
+                        const rate = total > 0 ? ((wins / total) * 100).toFixed(0) : 0;
+                        const tags = deck.deckTags || [];
                         const bgArt = deck.commanderImage ? `url(${deck.commanderImage})` : 'none';
+                        
                         return `
                             <div class="deck-card ${deck.id === selectedInsightDeckId ? 'selected' : ''}" 
                                  onclick="selectInsightDeck('${deck.id}')" style="--commander-art: ${bgArt}; cursor: pointer;">
                                 <div class="deck-header">
-                                    <h3 style="margin:0;">${deck.deckName}</h3>
+                                    <div>
+                                        <h3 style="margin:0;">${deck.deckName}</h3>
+                                        <div class="deck-tags-grid" style="margin-top: 5px;">
+                                            ${tags.map(t => `<span class="individual-tag" style="${getTagStyle(t)}">${t}</span>`).join('')}
+                                        </div>
+                                    </div>
                                     <div class="win-rate-badge"><span class="win-rate-val">${rate}%</span></div>
                                 </div>
                                 <div class="stat-badges">
                                     <div class="stat-badge-pill pill-won">WINS <b>${wins}</b></div>
+                                    <div class="stat-badge-pill" style="background: rgba(255,255,255,0.1); color: var(--text-dim);">GAMES <b>${total}</b></div>
                                     <div class="stat-badge-pill pill-kos">KILLS <b>${deck.knockouts || 0}</b></div>
+                                    <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${deck.firstBloodCount || 0}</b></div>
+                                    <div class="stat-badge-pill pill-ramp">MOST RAMP <b>${deck.mostRampCount || 0}</b></div>
+                                    <div class="stat-badge-pill pill-draw">MOST DRAW <b>${deck.mostDrawCount || 0}</b></div>
+                                    <div class="stat-badge-pill pill-first">WENT FIRST <b>${deck.wentFirstCount || 0}</b></div>
+                                    <div class="stat-badge-pill pill-last">WENT LAST <b>${deck.wentLastCount || 0}</b></div>
+                                    <div class="stat-badge-pill pill-fun">DID ITS THING <b>${deck.funCount || 0}</b></div>
+                                    <div class="stat-badge-pill pill-impact">HIGH IMPACT <b>${deck.impactCount || 0}</b></div>
                                 </div>
                             </div>`;
                     }).join('')}
                 </div>
                 <div class="insight-stats-card">
                     <div class="pie-chart-container" style="margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
-                        <label style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; font-weight:800; display:block; margin-bottom:10px; text-align:center;">Color Identity</label>
+                        <label style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; font-weight:800; display:block; margin-bottom:10px; text-align:center;">Commander Color Preference</label>
                         <div style="height: 180px; position: relative;"><canvas id="colorPieChart"></canvas></div>
                     </div>
                     <div class="chart-controls">
+                        <label style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; font-weight:800;">View Stats By:</label>
                         <select id="insightStatSelect" style="margin:0;">
-                            <option value="games">Total Games</option>
+                            <option value="games">Total Games played</option>
                             <option value="wins">Total Wins</option>
                         </select>
                     </div>
@@ -860,8 +891,11 @@ function renderInsightTab() {
                 </div>
             </div>`;
 
-        initInsightChart(playerDecks, document.getElementById('insightStatSelect').value);
+        // Draw Charts
+        const currentStat = document.getElementById('insightStatSelect').value;
+        initInsightChart(playerDecks, currentStat);
         initColorPieChart(playerDecks);
+
         document.getElementById('insightStatSelect').onchange = (e) => initInsightChart(playerDecks, e.target.value);
     }
 }
@@ -887,43 +921,53 @@ function tryInitializeDefaultPod() {
     }
 }
 
-let activeChart = null;
+let activeChart = null; // PERSISTENT BAR CHART INSTANCE
 
 function initInsightChart(decks, stat = 'games') {
     const canvas = document.getElementById('insightChart');
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    if (activeChart) activeChart.destroy();
 
-    const calculatedHeight = (decks.length * 25) + 100;
-    canvas.style.height = `${calculatedHeight}px`;
-    // ----------------------------------------
+    const sortedDecks = [...decks].sort((a, b) => {
+        const valA = stat === 'wins' ? (a.wins || 0) : ((a.wins || 0) + (a.losses || 0));
+        const valB = stat === 'wins' ? (b.wins || 0) : ((b.wins || 0) + (b.losses || 0));
+        return valB - valA;
+    });
 
-    const PALETTE = ["#3d85ff", "#ff4444", "#4caf50", "#ffeb3b", "#9c27b0", "#ff9800", "#00bcd4", "#e91e63"];
+    const dataLabels = sortedDecks.map(d => d.deckName);
+    const dataValues = sortedDecks.map(d => stat === 'wins' ? (d.wins || 0) : ((d.wins || 0) + (d.losses || 0)));
     
-    const dataLabels = decks.map(d => d.deckName);
-    const dataValues = decks.map(d => stat === 'wins' ? (d.wins || 0) : ((d.wins || 0) + (d.losses || 0)));
-
-    const backgroundColors = decks.map((d, i) => {
+    const PALETTE = ["#3d85ff", "#ff4444", "#4caf50", "#ffeb3b", "#9c27b0", "#ff9800", "#00bcd4", "#e91e63"];
+    const backgroundColors = sortedDecks.map((d, i) => {
         const baseColor = PALETTE[i % PALETTE.length];
-        if (selectedInsightDeckId === null) return baseColor + "cc"; 
-        return d.id === selectedInsightDeckId ? baseColor : baseColor + "22";
+        return selectedInsightDeckId === null ? baseColor + "cc" : (d.id === selectedInsightDeckId ? baseColor : baseColor + "22");
     });
 
-    const borderColors = decks.map((d, i) => {
-        const baseColor = PALETTE[i % PALETTE.length];
-        if (selectedInsightDeckId === null) return baseColor;
-        return d.id === selectedInsightDeckId ? baseColor : baseColor + "44";
-    });
+    if (activeChart) {
+        activeChart.data.labels = dataLabels;
+        activeChart.data.datasets[0].data = dataValues;
+        activeChart.data.datasets[0].backgroundColor = backgroundColors;
+        activeChart.options.scales.y.ticks.color = (context) => {
+            const deckId = sortedDecks[context.index]?.id;
+            return deckId === selectedInsightDeckId ? '#ffffff' : '#8e9297';
+        };
+        activeChart.update();
+        return;
+    }
+
+    const calculatedHeight = (sortedDecks.length * 25) + 100;
+    canvas.style.height = `${calculatedHeight}px`;
 
     activeChart = new Chart(ctx, {
         type: 'bar',
+        // REGISTER THE PLUGIN HERE
+        plugins: [ChartDataLabels],
         data: {
             labels: dataLabels,
             datasets: [{
                 data: dataValues,
                 backgroundColor: backgroundColors,
-                borderColor: borderColors,
-                borderWidth: 2,
+                borderWidth: 0,
                 borderRadius: 4,
                 barPercentage: 0.5,
                 categoryPercentage: 0.8
@@ -932,7 +976,11 @@ function initInsightChart(decks, stat = 'games') {
         options: {
             indexAxis: 'y',
             responsive: true,
-            maintainAspectRatio: false, // --- FIX: Allows the chart to respect our calculated height ---
+            maintainAspectRatio: false,
+            animation: {
+                duration: 750,
+                easing: 'easeInOutQuart'
+            },
             scales: {
                 x: { 
                     beginAtZero: true, 
@@ -943,7 +991,7 @@ function initInsightChart(decks, stat = 'games') {
                     grid: { display: false },
                     ticks: { 
                         color: (context) => {
-                            const deckId = decks[context.index]?.id;
+                            const deckId = sortedDecks[context.index]?.id;
                             return deckId === selectedInsightDeckId ? '#ffffff' : '#8e9297';
                         },
                         font: { weight: 'bold', size: 11 } 
@@ -952,9 +1000,18 @@ function initInsightChart(decks, stat = 'games') {
             },
             plugins: {
                 legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(0,0,0,0.8)',
-                    titleFont: { weight: 'bold' }
+                tooltip: { backgroundColor: 'rgba(0,0,0,0.8)' },
+                // CONFIGURE DATALABELS HERE
+                datalabels: {
+                    color: '#ffffff',
+                    anchor: 'end',
+                    align: 'right',
+                    offset: 5,
+                    font: {
+                        weight: 'bold',
+                        size: 11
+                    },
+                    formatter: (value) => value // Simply returns the number
                 }
             }
         }
@@ -967,14 +1024,12 @@ function initColorPieChart(decks) {
     const ctx = canvas.getContext('2d');
     if (activePieChart) activePieChart.destroy();
 
-    // 1. Calculate weighted color distribution
-    const colorTotals = { W: 0, U: 0, B: 0, R: 0, G: 0, Colorless: 0 };
+    // 1. Calculate weighted color distribution (Excluding Colorless)
+    const colorTotals = { W: 0, U: 0, B: 0, R: 0, G: 0 };
     
     decks.forEach(deck => {
         const colors = deck.colorIdentity || [];
-        if (colors.length === 0) {
-            colorTotals.Colorless += 1;
-        } else {
+        if (colors.length > 0) {
             const weight = 1 / colors.length;
             colors.forEach(c => {
                 if (colorTotals.hasOwnProperty(c)) colorTotals[c] += weight;
@@ -987,8 +1042,7 @@ function initColorPieChart(decks) {
         U: { label: 'Blue', color: '#0e68ab' },  
         B: { label: 'Black', color: '#150b00' }, 
         R: { label: 'Red', color: '#d3202a' },   
-        G: { label: 'Green', color: '#00733e' }, 
-        Colorless: { label: 'Colorless', color: '#90adbb' }
+        G: { label: 'Green', color: '#00733e' }
     };
 
     const labels = [];
