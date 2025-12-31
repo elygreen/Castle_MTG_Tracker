@@ -89,6 +89,12 @@ const getPlayerColor = (name) => {
     return player ? player.color : "var(--accent)";
 };
 
+const formatBracket = (val) => {
+    if (val == 5) return "cEDH";
+    if (val && val.toString().includes('.5')) return val.toString().replace('.5', '+');
+    return val || "1";
+};
+
 const TAG_COLORS = {
     "Aggro":            "#ff4444",
     "Aristocrats":      "#9c27b0",
@@ -303,7 +309,10 @@ onSnapshot(query(collection(db, "decks")), (snapshot) => {
             <div class="deck-card" style="--commander-art: ${bgArt}">
                 <div class="deck-header">
                     <div>
-                        <h3 style="margin:0; font-size:1.1rem;">${deck.deckName}</h3>
+                        <h3 style="margin:0; font-size:1.1rem;">
+                            ${deck.deckName} 
+                            <span style="font-size:0.7rem; color:var(--accent); margin-left:5px;">[${formatBracket(deck.bracket)}]</span>
+                        </h3>
                         <div style="color:${getPlayerColor(deck.player)}; font-size:0.75rem; margin-top:2px; font-weight:800; text-transform:uppercase; letter-spacing: 0.5px;">${deck.player}</div>
                         <div class="deck-tags-grid">
                             ${tags.map(t => `<span class="individual-tag" style="${getTagStyle(t)}">${t}</span>`).join('')}
@@ -458,6 +467,7 @@ document.getElementById('addDeckBtn').onclick = async () => {
     const player = document.getElementById('playerSelect').value;
     const deckName = document.getElementById('deckName').value.trim();
     const cmdInput = document.getElementById('commanderName').value.trim();
+    const bracket = document.getElementById('deckBracket').value;
     const checkedTags = Array.from(document.querySelectorAll('#tagSelector input:checked')).map(cb => cb.value);
 
     if (!player || !deckName) return;
@@ -495,6 +505,7 @@ document.getElementById('addDeckBtn').onclick = async () => {
     await addDoc(collection(db, "decks"), {
         player,
         deckName,
+        bracket: parseFloat(bracket) || 1,
         commander: commanderData.name,
         commanderImage: commanderData.image,
         colorIdentity: commanderData.colorIdentity,
@@ -517,6 +528,7 @@ document.getElementById('addDeckBtn').onclick = async () => {
     // Reset UI
     document.getElementById('deckName').value = '';
     document.getElementById('commanderName').value = '';
+    document.getElementById('deckBracket').value = '';
     document.querySelectorAll('#tagSelector input').forEach(cb => cb.checked = false);
     alert(`Deck Saved with Commander: ${commanderData.name}`);
 };
@@ -879,14 +891,23 @@ function renderInsightTab() {
                         <h1 style="margin: 0; font-size: 2.5rem; font-weight: 900; color: ${playerColor}; text-transform: uppercase; letter-spacing: -1px;">${selectedInsightPlayer}</h1>
                         <p style="margin: 0; color: var(--text-dim); font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Overall Performance</p>
                     </div>
-                    <div class="win-rate-badge" style="padding: 15px 25px; border-color: ${playerColor}44;">
-                        <span class="win-rate-val" style="font-size: 2rem;">${winRate}%</span>
-                        <span class="win-rate-label">TOTAL WIN RATE</span>
+                    <div style="display: flex; gap: 15px;">
+                        <div class="win-rate-badge" style="padding: 15px 25px; border-color: ${playerColor}44;">
+                            <span class="win-rate-val" style="font-size: 2rem;">${winRate}%</span>
+                            <span class="win-rate-label">TOTAL WIN RATE</span>
+                        </div>
+                        <div class="win-rate-badge" style="padding: 15px 25px; border-color: rgba(255,255,255,0.1);">
+                            <span class="win-rate-val" style="font-size: 2rem; color: #fff;">${playerStats.games}</span>
+                            <span class="win-rate-label">TOTAL GAMES</span>
+                        </div>
+                        <div class="win-rate-badge" style="padding: 15px 25px; border-color: rgba(255,255,255,0.1);">
+                            <span class="win-rate-val" style="font-size: 2rem; color: #fff;">${playerDecks.length}</span>
+                            <span class="win-rate-label">UNIQUE DECKS</span>
+                        </div>
                     </div>
                 </div>
                 <div class="stat-badges" style="margin-top: 20px; background: rgba(0,0,0,0.3); padding: 15px; gap: 10px;">
                     <div class="stat-badge-pill pill-won">1ST PLACE <b>${playerStats.wins}</b></div>
-                    <div class="stat-badge-pill" style="background: rgba(255,255,255,0.1);">GAMES <b>${playerStats.games}</b></div>
                     <div class="stat-badge-pill pill-kos">KILLS <b>${playerStats.kos}</b></div>
                     <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${playerStats.blood}</b></div>
                     <div class="stat-badge-pill pill-ramp">MOST RAMP <b>${playerStats.ramp}</b></div>
@@ -909,6 +930,7 @@ function renderInsightTab() {
                                 <div class="deck-header">
                                     <div>
                                         <h3 style="margin:0;">${deck.deckName}</h3>
+                                        <span style="font-size:0.7rem; color:var(--accent); margin-left:5px;">[${formatBracket(deck.bracket)}]</span>
                                         <div class="deck-tags-grid" style="margin-top: 5px;">
                                             ${(deck.deckTags || []).map(t => `<span class="individual-tag" style="${getTagStyle(t)}">${t}</span>`).join('')}
                                         </div>
