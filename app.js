@@ -1,19 +1,31 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getRemoteConfig, getValue, fetchAndActivate } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
+
 // --- AUTHENTICATION LOGIC ---
-const APP_PASSWORD = "castle123";
+const PASSWORDS = {
+    ADMIN: "castle123",
+    USER: "user123"
+}
 
 function checkAuth() {
-    const isAuth = sessionStorage.getItem('mtg_auth');
+    const accessLevel = sessionStorage.getItem('mtg_access_level');
     
-    if (isAuth === 'true') {
-        document.body.classList.add('auth-passed'); 
+    if (accessLevel) {
+        document.body.classList.add('auth-passed');
+        applyAccessRestrictions(accessLevel);
         return true;
     }
 
-    const entry = prompt("Please enter the password to access data entry:");
+    const entry = prompt("Please enter password:");
     
-    if (entry === APP_PASSWORD) {
-        sessionStorage.setItem('mtg_auth', 'true');
-        document.body.classList.add('auth-passed'); 
+    let level = null;
+    if (entry === PASSWORDS.ADMIN) level = 'admin';
+    else if (entry === PASSWORDS.USER) level = 'user';
+
+    if (level) {
+        sessionStorage.setItem('mtg_access_level', level);
+        document.body.classList.add('auth-passed');
+        applyAccessRestrictions(level);
         return true;
     } else {
         alert("Incorrect password. Access denied.");
@@ -25,6 +37,21 @@ function checkAuth() {
             </div>
         `;
         return false;
+    }
+}
+
+function applyAccessRestrictions(level) {
+    if (level === 'user') {
+        // Hide the navigation buttons for restricted tabs
+        const restrictedTabs = ['view', 'insight', 'manage', 'history'];
+        restrictedTabs.forEach(tabId => {
+            const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+            if (btn) btn.style.display = 'none';
+        });
+
+        // Optional: Hide edit/delete buttons in History for regular users
+        // This is handled via CSS below for a cleaner implementation
+        document.body.classList.add('role-user');
     }
 }
 
@@ -779,12 +806,20 @@ document.getElementById('toggleTagsBtn').onclick = () => {
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.onclick = () => {
+        const level = sessionStorage.getItem('mtg_access_level'); // Added for tiered access
+        const targetTab = btn.dataset.tab;
+
+        // Prevent navigation if restricted
+        if (level === 'user' && ['view', 'insight', 'manage', 'history'].includes(targetTab)) {
+            return;
+        }
+
         document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active'));
         btn.classList.add('active');
-        document.getElementById(btn.dataset.tab).classList.add('active');
+        document.getElementById(targetTab).classList.add('active');
         
         // Trigger specific render if Insight tab is clicked
-        if (btn.dataset.tab === 'insight') {
+        if (targetTab === 'insight') {
             renderInsightTab();
         }
     };

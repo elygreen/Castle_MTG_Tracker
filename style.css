@@ -565,3 +565,14 @@ textarea:focus {
     background: var(--accent);
     color: white;
 }
+
+body.role-user .edit-btn-sm, 
+body.role-user .player-controls,
+body.role-user #addParticipantBtn {
+    display: none !important;
+}
+
+/* Ensure the navigation bar looks clean with fewer buttons */
+body.role-user .tab-nav {
+    justify-content: center;
+}
