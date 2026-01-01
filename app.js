@@ -1,13 +1,33 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getRemoteConfig, getValue, fetchAndActivate } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
+import { 
+    getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, 
+    increment, query, orderBy, writeBatch, getDoc, updateDoc, limit, serverTimestamp, getDocs 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// --- AUTHENTICATION LOGIC ---
-const PASSWORDS = {
-    ADMIN: "castle123",
-    USER: "user123"
+const firebaseConfig = {
+    apiKey: "AIzaSyDAT1UIM1mFMH1vh_Wal4SqXOY6NSr0_6c",
+    authDomain: "castle-mtg-stat-tracker.firebaseapp.com",
+    projectId: "castle-mtg-stat-tracker",
+    storageBucket: "castle-mtg-stat-tracker.firebasestorage.app",
+    messagingSenderId: "503581755862",
+    appId: "1:503581755862:web:10222b71ae270b6ca03c77"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const remoteConfig = getRemoteConfig(app);
+remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
+
+async function getPasswords() {
+    await fetchAndActivate(remoteConfig);
+    return {
+        ADMIN: getValue(remoteConfig, "admin_password").asString(),
+        USER: getValue(remoteConfig, "user_password").asString()
+    };
 }
 
-function checkAuth() {
+async function checkAuth() {
     const accessLevel = sessionStorage.getItem('mtg_access_level');
     
     if (accessLevel) {
@@ -16,6 +36,7 @@ function checkAuth() {
         return true;
     }
 
+    const PASSWORDS = await getPasswords();
     const entry = prompt("Please enter password:");
     
     let level = null;
@@ -48,36 +69,9 @@ function applyAccessRestrictions(level) {
             const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
             if (btn) btn.style.display = 'none';
         });
-
-        // Optional: Hide edit/delete buttons in History for regular users
-        // This is handled via CSS below for a cleaner implementation
         document.body.classList.add('role-user');
     }
 }
-
-if (!checkAuth()) {
-    throw new Error("Unauthorized access");
-}
-
-// --- FIREBASE IMPORTS ---
-// FIXED: Removed the duplicate initializeApp import that was crashing the script
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { 
-    getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, 
-    increment, query, orderBy, writeBatch, getDoc, updateDoc, limit, serverTimestamp, getDocs 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyDAT1UIM1mFMH1vh_Wal4SqXOY6NSr0_6c",
-    authDomain: "castle-mtg-stat-tracker.firebaseapp.com",
-    projectId: "castle-mtg-stat-tracker",
-    storageBucket: "castle-mtg-stat-tracker.firebasestorage.app",
-    messagingSenderId: "503581755862",
-    appId: "1:503581755862:web:10222b71ae270b6ca03c77"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 // --- STATE ---
 let allDecks = [];
@@ -1321,3 +1315,8 @@ function initColorPieChart(decks) {
         });
     }
 }
+
+// Execute login
+checkAuth().catch(err => {
+    console.error("Auth failed:", err);
+});

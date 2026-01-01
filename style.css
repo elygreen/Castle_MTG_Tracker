@@ -573,6 +573,7 @@ body.role-user #addParticipantBtn {
 }
 
 /* Ensure the navigation bar looks clean with fewer buttons */
-body.role-user .tab-nav {
-    justify-content: center;
+body.role-user .edit-btn-sm, 
+body.role-user .player-controls {
+    display: none !important;
 }
