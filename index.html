@@ -25,32 +25,56 @@
         </nav>
 
         <div id="record" class="tab-content active">
+            <!-- Add Match -->
             <section class="card">
                 <h2>New Match</h2>
                 <div id="gameParticipants" class="participants-grid"></div>
                 
-                <div style="margin-top: 15px;">
-                    <label style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 5px;">Salt Score</label>
-                    <select id="matchSaltScore" style="width: 100%; box-sizing: border-box;">
-                        <option value="N/A">N/A</option>
-                        <option value="1">1 No Salt</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10 Extremely Salty</option>
-                    </select>
+                <div style="display: flex; gap: 15px; margin-top: 15px;">
+
+                    <!-- Salt Score -->
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 5px;">Salt Score</label>
+                        <select id="matchSaltScore" style="width: 100%; box-sizing: border-box; margin-bottom: 0;">
+                            <option value="N/A">N/A</option>
+                            <option value="1">1 No Salt</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10 Extremely Salty</option>
+                        </select>
+                    </div>
+
+                    <!-- Win Method -->
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 5px;">Win Method</label>
+                        <select id="matchWinMethod" style="width: 100%; box-sizing: border-box; margin-bottom: 0;">
+                            <option value="N/A">N/A</option>
+                            <option value="Combat Damage">Combat Damage</option>
+                            <option value="Commander Damage">Commander Damage</option>
+                            <option value="Combo">Combo</option>
+                            <option value="Burn">Burn</option>
+                            <option value="Drain">Drain</option>
+                            <option value="Storm">Storm</option>
+                            <option value="Alternate Wincon">Alternate Wincon</option>
+                            <option value="Mill">Mill</option>
+                            <option value="Poison/Infect">Poison/Infect</option>
+                        </select>
+                    </div>
                 </div>
 
+                <!-- Match Comments -->
                 <div style="margin-top: 15px;">
                     <label style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 5px;">Match Comments</label>
                     <textarea id="matchComment" placeholder="Anything note worthy?" style="width: 100%; min-height: 80px; box-sizing: border-box;"></textarea>
                 </div>
 
+                <!-- Submit Buttons -->
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <button id="addParticipantBtn" class="btn-blue" style="flex: 1; border: 1px solid var(--border);">+ Add Player</button>
                     <button id="submitMatchBtn" style="background-color: var(--success); color: white; flex: 1.5;">Submit Results</button>
@@ -58,6 +82,7 @@
             </section>
         </div>
 
+        <!-- History Tab -->
         <div id="history" class="tab-content">
             <section>
                 <h2>Recent Matches</h2>
@@ -65,6 +90,7 @@
             </section>
         </div>
 
+        <!-- Standings Tab -->
         <div id="view" class="tab-content">
             <section>
                 <h2>Leaderboard</h2>

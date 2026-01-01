@@ -407,7 +407,16 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
             <div class="history-header">
                 <div class="history-date">${dateStr}</div>
                 <div style="display:flex; gap:10px; align-items:center;">
-                    ${match.saltScore && match.saltScore !== 'N/A' ? `<div class="stat-badge-pill" style="background: var(--mtg-orange); font-size: 0.6rem;">SALT: ${match.saltScore}</div>` : ''}
+                    ${match.winMethod && match.winMethod !== 'N/A' ? `
+                        <div class="stat-badge-pill" style="background: var(--accent); font-size: 0.6rem; border: 1px solid rgba(255,255,255,0.2);">
+                            ${match.winMethod.toUpperCase()}
+                        </div>` : ''}
+                    
+                    ${match.saltScore && match.saltScore !== 'N/A' ? `
+                        <div class="stat-badge-pill" style="background: var(--mtg-orange); font-size: 0.6rem;">
+                            SALT: ${match.saltScore}
+                        </div>` : ''}
+                    
                     <div class="history-date">${match.participants.length} Players</div>
                     <button class="edit-btn-sm" onclick="handleEditMatchTrigger('${matchId}')">Edit</button>
                 </div>
@@ -584,9 +593,8 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     if (!hasWinner) { alert("Please select a winner before submitting!"); return; }
     for (const row of rows) { if (!row.querySelector('.p-deck').value) { alert("Ensure every player has a deck selected."); return; } }
 
-    // Salt Score
     const saltScore = document.getElementById('matchSaltScore').value;
-    // Match Comments
+    const winMethod = document.getElementById('matchWinMethod').value;
     const matchComment = document.getElementById('matchComment').value.trim();
     const batch = writeBatch(db);
     const matchParticipants = [];
@@ -622,7 +630,8 @@ document.getElementById('submitMatchBtn').onclick = async () => {
             wentFirstCount: increment(row.querySelector('.p-first').checked ? 1 : 0),
             wentLastCount: increment(row.querySelector('.p-last').checked ? 1 : 0),
             funCount: increment(row.querySelector('.p-fun').checked ? 1 : 0),
-            impactCount: increment(row.querySelector('.p-impact').checked ? 1 : 0)
+            impactCount: increment(row.querySelector('.p-impact').checked ? 1 : 0),
+            [`winMethod_${winMethod.replace(/\s+/g, '_')}`]: increment(win && winMethod !== 'N/A' ? 1 : 0)
         });
     });
     
@@ -632,6 +641,7 @@ document.getElementById('submitMatchBtn').onclick = async () => {
         timestamp: serverTimestamp(), 
         participants: matchParticipants,
         saltScore: saltScore,
+        winMethod: winMethod,
         comment: matchComment 
     });
     
@@ -639,6 +649,7 @@ document.getElementById('submitMatchBtn').onclick = async () => {
 
     // Reset Logic: Keep players, clear stats and comment
     document.getElementById('matchComment').value = '';
+    document.getElementById('matchWinMethod').value = 'N/A';
     rows.forEach(row => {
         row.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
         row.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
@@ -996,6 +1007,7 @@ function renderInsightTab() {
                         const total = (deck.wins || 0) + (deck.losses || 0);
                         const rate = total > 0 ? ((deck.wins / total) * 100).toFixed(0) : 0;
                         const bgArt = deck.commanderImage ? `url(${deck.commanderImage})` : 'none';
+                        const calcPct = (val) => total > 0 ? ` (${((val / total) * 100).toFixed(0)}%)` : ' (0%)';
                         return `
                             <div class="deck-card ${deck.id === selectedInsightDeckId ? 'selected' : ''}" 
                                  onclick="selectInsightDeck('${deck.id}')" style="--commander-art: ${bgArt}; cursor: pointer;">
@@ -1019,18 +1031,29 @@ function renderInsightTab() {
                                             ${(deck.deckTags || []).map(t => `<span class="individual-tag" style="${getTagStyle(t)}">${t}</span>`).join('')}
                                         </div>
                                     </div>
-                                    <div class="win-rate-badge"><span class="win-rate-val">${rate}%</span></div>
+
+                                    <div style="display: flex; gap: 8px;">
+                                        <div class="win-rate-badge">
+                                            <span class="win-rate-val">${total}</span>
+                                            <span class="win-rate-label">GAMES</span>
+                                        </div>
+                                        <div class="win-rate-badge">
+                                            <span class="win-rate-val">${rate}%</span>
+                                            <span class="win-rate-label">WIN RATE</span>
+                                        </div>
+                                    </div>
+
                                 </div>
                                 <div class="stat-badges">
-                                    <div class="stat-badge-pill pill-won">WINS <b>${deck.wins || 0}</b></div>
+                                    <div class="stat-badge-pill pill-won">WINS <b>${deck.wins || 0}${calcPct(deck.wins)}</b></div>
                                     <div class="stat-badge-pill" style="background:rgba(255,255,255,0.1);">GAMES <b>${total}</b></div>
                                     <div class="stat-badge-pill pill-kos">KILLS <b>${deck.knockouts || 0}</b></div>
-                                    <div class="stat-badge-pill pill-blood">BLOOD <b>${deck.firstBloodCount || 0}</b></div>
-                                    <div class="stat-badge-pill pill-ramp">RAMP <b>${deck.mostRampCount || 0}</b></div>
-                                    <div class="stat-badge-pill pill-draw">DRAW <b>${deck.mostDrawCount || 0}</b></div>
-                                    <div class="stat-badge-pill pill-first">1ST <b>${deck.wentFirstCount || 0}</b></div>
-                                    <div class="stat-badge-pill pill-last">LAST <b>${deck.wentLastCount || 0}</b></div>
-                                    <div class="stat-badge-pill pill-impact">IMPACT <b>${deck.impactCount || 0}</b></div>
+                                    <div class="stat-badge-pill pill-blood">BLOOD <b>${deck.firstBloodCount || 0}${calcPct(deck.firstBloodCount)}</b></div>
+                                    <div class="stat-badge-pill pill-ramp">RAMP <b>${deck.mostRampCount || 0}${calcPct(deck.mostRampCount)}</b></div>
+                                    <div class="stat-badge-pill pill-draw">DRAW <b>${deck.mostDrawCount || 0}${calcPct(deck.mostDrawCount)}</b></div>
+                                    <div class="stat-badge-pill pill-first">1ST <b>${deck.wentFirstCount || 0}${calcPct(deck.wentFirstCount)}</b></div>
+                                    <div class="stat-badge-pill pill-last">LAST <b>${deck.wentLastCount || 0}${calcPct(deck.wentLastCount)}</b></div>
+                                    <div class="stat-badge-pill pill-impact">IMPACT <b>${deck.impactCount || 0}${calcPct(deck.impactCount)}</b></div>
                                 </div>
                             </div>`;
                     }).join('')}
