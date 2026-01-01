@@ -552,3 +552,16 @@ textarea:focus {
     /* Refined: translate3d is better for performance/flicker prevention */
     transform: translate3d(-50%, 0, 0);
 }
+
+#insightDeckList .player-edit-btn {
+    padding: 2px;
+    font-size: 10px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    border: 1px solid var(--border);
+}
+
+#insightDeckList .player-edit-btn:hover {
+    background: var(--accent);
+    color: white;
+}

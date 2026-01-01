@@ -83,6 +83,18 @@ const modalTitle = document.getElementById('modalTitle');
 const modalBody = document.getElementById('modalBody');
 const modalActions = document.getElementById('modalActions');
 
+const BRACKET_COLORS = {
+    "1":    "#9c27b0",
+    "1.5":  "#9c27b0",
+    "2":    "#3d85ff",
+    "2.5":  "#3d85ff",
+    "3":    "#4caf50",
+    "3.5":  "#4caf50",
+    "4":    "#ff7b00",
+    "4.5":  "#ff7b00",
+    "5":    "#ff4444"
+};
+
 // --- HELPERS ---
 const getPlayerColor = (name) => {
     const player = allPlayers.find(p => p.name === name);
@@ -125,6 +137,18 @@ const TAG_COLORS = {
     "Enchantress":      "#ab47bc",
     "Storm":            "#1e88e5",
     "Theft":            "#f4511e"
+};
+
+const getColorPips = (identity) => {
+    if (!identity || identity.length === 0) return '';
+    const pipMap = {
+        'W': '⚪',
+        'U': '🔵',
+        'B': '⚫',
+        'R': '🔴',
+        'G': '🟢'
+    };
+    return identity.map(c => pipMap[c] || '').join('');
 };
 
 const getTagStyle = (tag) => {
@@ -290,9 +314,15 @@ onSnapshot(query(collection(db, "decks")), (snapshot) => {
     allDecks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
     allDecks.sort((a, b) => {
-        const totalA = (a.wins || 0) + (a.losses || 0);
-        const totalB = (b.wins || 0) + (b.losses || 0);
-        return totalB - totalA; 
+        const nameA = a.deckName.toLowerCase();
+        const nameB = b.deckName.toLowerCase();
+
+        // 1. Force 'Misc' to the bottom
+        if (nameA === 'misc' && nameB !== 'misc') return 1;
+        if (nameB === 'misc' && nameA !== 'misc') return -1;
+
+        // 2. Otherwise, sort alphabetically by deck name
+        return nameA.localeCompare(nameB);
     });
 
     allDecks.forEach(deck => {
@@ -311,7 +341,21 @@ onSnapshot(query(collection(db, "decks")), (snapshot) => {
                     <div>
                         <h3 style="margin:0; font-size:1.1rem;">
                             ${deck.deckName} 
-                            <span style="font-size:0.7rem; color:var(--accent); margin-left:5px;">[${formatBracket(deck.bracket)}]</span>
+                            <span style="
+                                font-size: 0.65rem; 
+                                color: white; 
+                                background: ${BRACKET_COLORS[deck.bracket] || 'var(--accent)'}; 
+                                padding: 2px 6px; 
+                                border-radius: 4px; 
+                                font-weight: 800; 
+                                margin-left: 8px;
+                                text-transform: uppercase;
+                            ">
+                                ${formatBracket(deck.bracket)}
+                            </span>
+                            <span style="margin-left: 5px; font-size: 0.9rem; letter-spacing: -2px;">
+                                ${getColorPips(deck.colorIdentity)}
+                            </span>
                         </h3>
                         <div style="color:${getPlayerColor(deck.player)}; font-size:0.75rem; margin-top:2px; font-weight:800; text-transform:uppercase; letter-spacing: 0.5px;">${deck.player}</div>
                         <div class="deck-tags-grid">
@@ -363,6 +407,7 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
             <div class="history-header">
                 <div class="history-date">${dateStr}</div>
                 <div style="display:flex; gap:10px; align-items:center;">
+                    ${match.saltScore && match.saltScore !== 'N/A' ? `<div class="stat-badge-pill" style="background: var(--mtg-orange); font-size: 0.6rem;">SALT: ${match.saltScore}</div>` : ''}
                     <div class="history-date">${match.participants.length} Players</div>
                     <button class="edit-btn-sm" onclick="handleEditMatchTrigger('${matchId}')">Edit</button>
                 </div>
@@ -484,8 +529,6 @@ document.getElementById('addDeckBtn').onclick = async () => {
             const response = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(cmdInput)}`);
             if (response.ok) {
                 const card = await response.json();
-
-                // --- FIX: Handle Double-Faced Cards ---
                 const isDoubleFaced = card.card_faces && !card.image_uris;
                 const frontFace = isDoubleFaced ? card.card_faces[0] : card;
                 
@@ -494,7 +537,6 @@ document.getElementById('addDeckBtn').onclick = async () => {
                     image: frontFace.image_uris?.art_crop || "",
                     colorIdentity: card.color_identity || []
                 };
-                // --------------------------------------
             }
         } catch (error) {
             console.error("Scryfall lookup failed:", error);
@@ -541,10 +583,11 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     const hasWinner = Array.from(document.querySelectorAll('.p-win')).some(radio => radio.checked);
     if (!hasWinner) { alert("Please select a winner before submitting!"); return; }
     for (const row of rows) { if (!row.querySelector('.p-deck').value) { alert("Ensure every player has a deck selected."); return; } }
-    
-    // Capture the comment
-    const matchComment = document.getElementById('matchComment').value.trim();
 
+    // Salt Score
+    const saltScore = document.getElementById('matchSaltScore').value;
+    // Match Comments
+    const matchComment = document.getElementById('matchComment').value.trim();
     const batch = writeBatch(db);
     const matchParticipants = [];
     
@@ -588,6 +631,7 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     await addDoc(collection(db, "matches"), { 
         timestamp: serverTimestamp(), 
         participants: matchParticipants,
+        saltScore: saltScore,
         comment: matchComment 
     });
     
@@ -735,6 +779,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     };
 });
 
+// Edit Deck
 window.handleEditDeckSettingsTrigger = async (deckId) => {
     const deck = allDecks.find(d => d.id === deckId);
     const currentTags = deck.deckTags || [];
@@ -758,6 +803,20 @@ window.handleEditDeckSettingsTrigger = async (deckId) => {
                     <input type="text" id="editCommanderName" value="${deck.commander || ''}" placeholder="e.g. Atraxa" style="flex: 1; margin: 0;">
                     <button id="fetchCmdBtn" class="btn-blue" style="padding: 0 15px;">Search</button>
                 </div>
+            </div>
+            <div>
+            <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;">Power Bracket</label>
+                <select id="editDeckBracket" style="width:100%; margin-top:5px;">
+                    <option value="1" ${deck.bracket == 1 ? 'selected' : ''}>1</option>
+                    <option value="1.5" ${deck.bracket == 1.5 ? 'selected' : ''}>1+</option>
+                    <option value="2" ${deck.bracket == 2 ? 'selected' : ''}>2</option>
+                    <option value="2.5" ${deck.bracket == 2.5 ? 'selected' : ''}>2+</option>
+                    <option value="3" ${deck.bracket == 3 ? 'selected' : ''}>3</option>
+                    <option value="3.5" ${deck.bracket == 3.5 ? 'selected' : ''}>3+</option>
+                    <option value="4" ${deck.bracket == 4 ? 'selected' : ''}>4</option>
+                    <option value="4.5" ${deck.bracket == 4.5 ? 'selected' : ''}>4+</option>
+                    <option value="5" ${deck.bracket == 5 ? 'selected' : ''}>cEDH</option>
+                </select>
             </div>
             <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; margin-top:10px;">Edit Tags</label>
             <div id="editTagGrid" class="tag-selector-grid" style="max-height: 200px; overflow-y: auto;">
@@ -794,7 +853,9 @@ window.handleEditDeckSettingsTrigger = async (deckId) => {
 
                 preview.innerHTML = `
                     <img src="${artCrop}" style="width:100%; height:100%; object-fit: cover; opacity: 0.6;">
-                    <div id="previewStatus" style="position: absolute; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: #4caf50; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                    <div id="previewStatus" 
+                        data-identity='${JSON.stringify(card.color_identity)}' 
+                        style="position: absolute; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: #4caf50; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
                         ✓ Found: ${card.name}
                     </div>`;
                 document.getElementById('editCommanderName').value = card.name;
@@ -808,30 +869,41 @@ window.handleEditDeckSettingsTrigger = async (deckId) => {
     };
 };
 
+// Update Deck
 async function finalizeDeckUpdate(deckId) {
     const newName = document.getElementById('editDeckName').value.trim();
     const newCmdName = document.getElementById('editCommanderName').value.trim();
+    const newBracket = document.getElementById('editDeckBracket').value;
     const checkedTags = Array.from(document.querySelectorAll('#editTagGrid input:checked')).map(cb => cb.value);
     const previewImg = document.querySelector('#commanderPreview img');
     
+    const statusEl = document.getElementById('previewStatus');
+    const newIdentity = statusEl && statusEl.dataset.identity ? JSON.parse(statusEl.dataset.identity) : null;
+
     if (!newName) return;
 
     // Use the image already displayed in the preview
     let updateData = {
         deckName: newName,
         commander: newCmdName,
+        bracket: parseFloat(newBracket) || 1,
         commanderImage: previewImg ? previewImg.src : "",
         deckTags: checkedTags
     };
 
+    if (newIdentity) {
+            updateData.colorIdentity = newIdentity;
+    }
+
     try {
         await updateDoc(doc(db, "decks", deckId), updateData);
-        // Removed browser alert for better UX
+        closeModal();
     } catch (error) {
         console.error("Error updating deck:", error);
     }
 }
 
+// ---------- Insight Tab ----------
 function renderInsightTab() {
     const playerListContainer = document.getElementById('insightPlayerList');
     const detailContainer = document.getElementById('insightDetailView');
@@ -852,7 +924,6 @@ function renderInsightTab() {
         </div>`;
 
     if (!selectedInsightPlayer) {
-        // VIEW: PLAYER SELECTION
         selectedInsightDeckId = null;
         backBtn.style.display = 'none';
         title.textContent = "Select a Player";
@@ -881,6 +952,7 @@ function renderInsightTab() {
             impact: acc.impact + (d.impactCount || 0)
         }), { games: 0, wins: 0, kos: 0, blood: 0, ramp: 0, draw: 0, first: 0, last: 0, impact: 0 });
 
+        const totalGames = playerStats.games || 0;
         const winRate = playerStats.games > 0 ? ((playerStats.wins / playerStats.games) * 100).toFixed(1) : 0;
         const playerColor = getPlayerColor(selectedInsightPlayer);
 
@@ -929,8 +1001,20 @@ function renderInsightTab() {
                                  onclick="selectInsightDeck('${deck.id}')" style="--commander-art: ${bgArt}; cursor: pointer;">
                                 <div class="deck-header">
                                     <div>
-                                        <h3 style="margin:0;">${deck.deckName}</h3>
-                                        <span style="font-size:0.7rem; color:var(--accent); margin-left:5px;">[${formatBracket(deck.bracket)}]</span>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <h3 style="margin:0; font-size:1.5rem; display: flex; align-items: center;">
+                                                ${deck.deckName} 
+                                                <span style="font-size: 1.0rem; color: white; background: ${BRACKET_COLORS[deck.bracket] || 'var(--accent)'}; padding: 1px 5px; border-radius: 4px; margin-left: 8px;">
+                                                    ${formatBracket(deck.bracket)}
+                                                </span>
+                                                <span style="margin-left: 10px; font-size: 1.2rem; letter-spacing: -3px;">
+                                                    ${getColorPips(deck.colorIdentity)}
+                                                </span>
+                                            </h3>
+                                            <div class="player-controls">
+                                                <button class="player-edit-btn" onclick="event.stopPropagation(); handleEditDeckSettingsTrigger('${deck.id}')">✏️</button>
+                                            </div>
+                                        </div>
                                         <div class="deck-tags-grid" style="margin-top: 5px;">
                                             ${(deck.deckTags || []).map(t => `<span class="individual-tag" style="${getTagStyle(t)}">${t}</span>`).join('')}
                                         </div>
@@ -995,13 +1079,20 @@ function tryInitializeDefaultPod() {
     }
 }
 
-let activeChart = null; // PERSISTENT BAR CHART INSTANCE
+let activeChart = null;
 
 function initInsightChart(decks, stat = 'games') {
     const canvas = document.getElementById('insightChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
+    // Destroy existing chart if present
+    if (activeChart) {
+        activeChart.destroy();
+        activeChart = null;
+    }
+
+    // Prepare Data
     const sortedDecks = [...decks].sort((a, b) => {
         const valA = stat === 'wins' ? (a.wins || 0) : ((a.wins || 0) + (a.losses || 0));
         const valB = stat === 'wins' ? (b.wins || 0) : ((b.wins || 0) + (b.losses || 0));
@@ -1010,7 +1101,6 @@ function initInsightChart(decks, stat = 'games') {
 
     const dataLabels = sortedDecks.map(d => d.deckName);
     const dataValues = sortedDecks.map(d => stat === 'wins' ? (d.wins || 0) : ((d.wins || 0) + (d.losses || 0)));
-    
     const PALETTE = ["#3d85ff", "#ff4444", "#4caf50", "#ffeb3b", "#9c27b0", "#ff9800", "#00bcd4", "#e91e63"];
     const backgroundColors = sortedDecks.map((d, i) => {
         const baseColor = PALETTE[i % PALETTE.length];
@@ -1029,7 +1119,7 @@ function initInsightChart(decks, stat = 'games') {
         return;
     }
 
-    const calculatedHeight = (sortedDecks.length * 25) + 100;
+    const calculatedHeight = (sortedDecks.length * 35) + 100;
     canvas.style.height = `${calculatedHeight}px`;
 
     activeChart = new Chart(ctx, {
@@ -1096,27 +1186,34 @@ function initColorPieChart(decks) {
     const canvas = document.getElementById('colorPieChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    if (activePieChart) activePieChart.destroy();
+
+    // Destroy old pie chart before recreating
+    if (activePieChart) {
+        activePieChart.destroy();
+        activePieChart = null;
+    }
 
     // 1. Calculate weighted color distribution (Excluding Colorless)
     const colorTotals = { W: 0, U: 0, B: 0, R: 0, G: 0 };
-    
+
     decks.forEach(deck => {
         const colors = deck.colorIdentity || [];
         if (colors.length > 0) {
             const weight = 1 / colors.length;
             colors.forEach(c => {
-                if (colorTotals.hasOwnProperty(c)) colorTotals[c] += weight;
+                if (colorTotals.hasOwnProperty(c)) {
+                    colorTotals[c] += weight;
+                }
             });
         }
     });
 
     const colorMap = {
         W: { label: 'White', color: '#f8f1d1' }, 
-        U: { label: 'Blue', color: '#0e68ab' },  
-        B: { label: 'Black', color: '#150b00' }, 
-        R: { label: 'Red', color: '#d3202a' },   
-        G: { label: 'Green', color: '#00733e' }
+        U: { label: 'Blue', color: '#007dddff' },  
+        B: { label: 'Black', color: '#0f0801ff' }, 
+        R: { label: 'Red', color: '#ca0912ff' },   
+        G: { label: 'Green', color: '#049931ff' }
     };
 
     const labels = [];
@@ -1126,31 +1223,43 @@ function initColorPieChart(decks) {
     Object.keys(colorTotals).forEach(key => {
         if (colorTotals[key] > 0) {
             labels.push(colorMap[key].label);
-            data.push(colorTotals[key].toFixed(2));
+            data.push(parseFloat(colorTotals[key].toFixed(2)));
             bgColors.push(colorMap[key].color);
         }
     });
 
-    activePieChart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: bgColors,
-                borderWidth: 1,
-                borderColor: 'var(--surface)'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: { color: '#8e9297', font: { size: 10, weight: 'bold' }, padding: 15 }
+    if (data.length > 0) {
+        activePieChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: bgColors,
+                    borderWidth: 1,
+                    borderColor: 'var(--surface)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { color: '#8e9297', font: { size: 10, weight: 'bold' }, padding: 15 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((acc, curr) => acc + curr, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${percentage}%`;
+                            }
+                        }
+                    }
                 }
             }
-        }
-    });
+        });
+    }
 }

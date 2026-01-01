@@ -15,6 +15,7 @@
             <h1>Castle MTG Stat Tracker</h1>
         </header>
 
+        <!-- Navigation Tabs -->
         <nav class="tab-nav">
             <button class="tab-btn active" data-tab="record">Record Match</button>
             <button class="tab-btn" data-tab="history">History</button>
@@ -28,6 +29,23 @@
                 <h2>New Match</h2>
                 <div id="gameParticipants" class="participants-grid"></div>
                 
+                <div style="margin-top: 15px;">
+                    <label style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 5px;">Salt Score</label>
+                    <select id="matchSaltScore" style="width: 100%; box-sizing: border-box;">
+                        <option value="N/A">N/A</option>
+                        <option value="1">1 No Salt</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10 Extremely Salty</option>
+                    </select>
+                </div>
+
                 <div style="margin-top: 15px;">
                     <label style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 5px;">Match Comments</label>
                     <textarea id="matchComment" placeholder="Anything note worthy?" style="width: 100%; min-height: 80px; box-sizing: border-box;"></textarea>
