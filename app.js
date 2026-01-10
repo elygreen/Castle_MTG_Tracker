@@ -250,6 +250,7 @@ function addParticipant(defaultPlayerName = null) {
         
         <div class="participant-row line-2">
             <label class="won-toggle compact-toggle"><input type="radio" name="winner" class="p-win" style="display:none">WON</label>
+            <label class="stat-pill pill-influence compact-pill"> <input type="radio" name="influence_owner" class="p-influence" style="display:none"> Influence</label>
             <label class="stat-pill pill-blood compact-pill"><input type="radio" name="blood_owner" class="p-blood" style="display:none"> Blood</label>
             <label class="stat-pill pill-ramp compact-pill"><input type="radio" name="ramp_owner" class="p-ramp" style="display:none"> Ramp</label>
             <label class="stat-pill pill-draw compact-pill"><input type="radio" name="draw_owner" class="p-draw" style="display:none"> Draw</label>
@@ -396,6 +397,7 @@ onSnapshot(query(collection(db, "decks")), (snapshot) => {
                 </div>
                 <div class="stat-badges">
                     <div class="stat-badge-pill pill-won">WINS <b>${wins}</b></div>
+                    <div class="stat-badge-pill pill-influence">INFLUENCE <b>${deck.highestInfluenceCount || 0}</b></div>
                     <div class="stat-badge-pill pill-kos">KILLS <b>${deck.knockouts || 0}</b></div>
                     <div class="stat-badge-pill pill-sol">SOL RING <b>${deck.solRingOpening || 0}</b></div>
                     <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${deck.firstBloodCount || 0}</b></div>
@@ -454,6 +456,7 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
                         </div>
                         <div class="history-stats">
                             ${p.win ? '<div class="stat-badge-pill pill-won">WIN</div>' : ''}
+                            ${p.influence ? `<div class="stat-badge-pill pill-influence">HIGHEST INFLUENCE</div>` : ''}
                             ${p.kos !== "N/A" && p.kos > 0 ? `<div class="stat-badge-pill pill-kos">KOS <b>${p.kos}</b></div>` : ''}
                             ${p.funRating > 0 ? `<div class="stat-badge-pill pill-fun">★ <b>${p.funRating}</b></div>` : ''}
                             ${p.sol ? `<div class="stat-badge-pill pill-sol">SOL RING</div>` : ''}
@@ -533,7 +536,7 @@ document.getElementById('addPlayerBtn').onclick = async () => {
         knockouts: 0, firstBloodCount: 0, mostRampCount: 0, 
         mostDrawCount: 0, solRingOpening: 0, wentFirstCount: 0, 
         wentLastCount: 0, funCount: 0, impactCount: 0,
-        funRatingTotal: 0, funRatingCount: 0
+        funRatingTotal: 0, funRatingCount: 0, highestInfluenceCount: 0,
     });
     nameInput.value = '';
 };
@@ -633,6 +636,7 @@ document.getElementById('submitMatchBtn').onclick = async () => {
             deckId: id, player: deckObj.player, deckName: deckObj.deckName, deckTags: deckObj.deckTags || [], win, 
             kos: rawKills === "na" ? "N/A" : kills,
             funRating: funRating,
+            influence: row.querySelector('.p-influence').checked,
             sol: row.querySelector('.p-sol').checked, blood: row.querySelector('.p-blood').checked,
             ramp: row.querySelector('.p-ramp').checked, draw: row.querySelector('.p-draw').checked,
             first: row.querySelector('.p-first').checked, last: row.querySelector('.p-last').checked,
@@ -652,6 +656,7 @@ document.getElementById('submitMatchBtn').onclick = async () => {
             wentLastCount: increment(row.querySelector('.p-last').checked ? 1 : 0),
             funCount: increment(row.querySelector('.p-fun').checked ? 1 : 0),
             impactCount: increment(row.querySelector('.p-impact').checked ? 1 : 0),
+            highestInfluenceCount: increment(row.querySelector('.p-influence').checked ? 1 : 0),
             [`winMethod_${winMethod.replace(/\s+/g, '_')}`]: increment(win && winMethod !== 'N/A' ? 1 : 0)
         });
     });
