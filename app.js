@@ -245,22 +245,14 @@ function addParticipant(defaultPlayerName = null) {
                     <option value="5">5/5</option>
                 </select>
             </div>
-            <button class="remove-participant" onclick="this.parentElement.parentElement.remove(); handleDrawToggle();">✕</button>
+            <button class="remove-participant" onclick="this.parentElement.parentElement.remove()">✕</button>
         </div>
         
         <div class="participant-row line-2">
             <label class="won-toggle compact-toggle"><input type="radio" name="winner" class="p-win" style="display:none">WON</label>
             <label class="stat-pill pill-blood compact-pill"><input type="radio" name="blood_owner" class="p-blood" style="display:none"> Blood</label>
             <label class="stat-pill pill-ramp compact-pill"><input type="radio" name="ramp_owner" class="p-ramp" style="display:none"> Ramp</label>
-            
-            <label class="stat-pill pill-draw compact-pill">
-                <input type="checkbox" class="p-draw" style="display:none" onchange="handleDrawToggle()"> Draw
-            </label>
-
-            <label class="stat-pill pill-influence compact-pill">
-                <input type="radio" name="influence_owner" class="p-influence" style="display:none"> Influence
-            </label>
-
+            <label class="stat-pill pill-draw compact-pill"><input type="radio" name="draw_owner" class="p-draw" style="display:none"> Draw</label>
             <label class="stat-pill pill-first compact-pill"><input type="radio" name="first_owner" class="p-first" style="display:none"> 1st</label>
             <label class="stat-pill pill-last compact-pill"><input type="radio" name="last_owner" class="p-last" style="display:none"> Last</label>
         </div>
@@ -404,7 +396,6 @@ onSnapshot(query(collection(db, "decks")), (snapshot) => {
                 </div>
                 <div class="stat-badges">
                     <div class="stat-badge-pill pill-won">WINS <b>${wins}</b></div>
-                    <div class="stat-badge-pill pill-influence">INFLUENCE <b>${deck.highestInfluenceCount || 0}${calcPct(deck.highestInfluenceCount)}</b></div>
                     <div class="stat-badge-pill pill-kos">KILLS <b>${deck.knockouts || 0}</b></div>
                     <div class="stat-badge-pill pill-sol">SOL RING <b>${deck.solRingOpening || 0}</b></div>
                     <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${deck.firstBloodCount || 0}</b></div>
@@ -474,7 +465,6 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
                             ${p.first ? `<div class="stat-badge-pill pill-first">1ST</div>` : ''}
                             ${p.last ? `<div class="stat-badge-pill pill-last">LAST</div>` : ''}
                             ${p.impact ? `<div class="stat-badge-pill pill-impact">HIGH IMPACT</div>` : ''}
-                            ${p.influence ? `<div class="stat-badge-pill pill-influence">HIGHEST INFLUENCE</div>` : ''}
                         </div>
                     </div>
                 `).join('')}
@@ -620,22 +610,9 @@ document.getElementById('addParticipantBtn').onclick = () => addParticipant();
 document.getElementById('submitMatchBtn').onclick = async () => {
     const rows = document.querySelectorAll('#gameParticipants .card');
     if (rows.length < 2) { alert("Select at least 2 participants!"); return; }
-
-    const drawChecks = Array.from(document.querySelectorAll('.p-draw:checked'));
-    const winRadio = document.querySelector('.p-win:checked');
-    
-    // Validation: Must have a single winner OR at least 2 people in a draw
-    if (!winRadio && drawChecks.length < 2) { 
-        alert("Please select a winner or at least 2 players for a Draw!"); 
-        return; 
-    }
-    
-    for (const row of rows) { 
-        if (!row.querySelector('.p-deck').value) { 
-            alert("Ensure every player has a deck selected."); 
-            return; 
-        } 
-    }
+    const hasWinner = Array.from(document.querySelectorAll('.p-win')).some(radio => radio.checked);
+    if (!hasWinner) { alert("Please select a winner before submitting!"); return; }
+    for (const row of rows) { if (!row.querySelector('.p-deck').value) { alert("Ensure every player has a deck selected."); return; } }
 
     const saltScore = document.getElementById('matchSaltScore').value;
     const winMethod = document.getElementById('matchWinMethod').value;
@@ -646,28 +623,20 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     rows.forEach(row => {
         const id = row.querySelector('.p-deck').value;
         const deckObj = allDecks.find(d => d.id === id);
-        const isDrawMatch = drawChecks.length >= 2;
-        const isPartOfDraw = row.querySelector('.p-draw').checked;
-        const wonRadioChecked = row.querySelector('.p-win').checked;
-        const win = isDrawMatch ? isPartOfDraw : wonRadioChecked;
+        const win = row.querySelector('.p-win').checked;
         const funRating = parseInt(row.querySelector('.p-fun-rating').value) || 0;
+        
         const rawKills = row.querySelector('.p-kills').value;
         const kills = rawKills === "na" ? 0 : parseInt(rawKills);
         
         matchParticipants.push({
-            deckId: id, player: deckObj.player, deckName: deckObj.deckName, 
-            deckTags: deckObj.deckTags || [], win, 
+            deckId: id, player: deckObj.player, deckName: deckObj.deckName, deckTags: deckObj.deckTags || [], win, 
             kos: rawKills === "na" ? "N/A" : kills,
             funRating: funRating,
-            sol: row.querySelector('.p-sol').checked, 
-            blood: row.querySelector('.p-blood').checked,
-            ramp: row.querySelector('.p-ramp').checked, 
-            draw: row.querySelector('.p-draw').checked,
-            first: row.querySelector('.p-first').checked, 
-            last: row.querySelector('.p-last').checked,
-            fun: row.querySelector('.p-fun').checked, 
-            impact: row.querySelector('.p-impact').checked,
-            influence: row.querySelector('.p-influence').checked,
+            sol: row.querySelector('.p-sol').checked, blood: row.querySelector('.p-blood').checked,
+            ramp: row.querySelector('.p-ramp').checked, draw: row.querySelector('.p-draw').checked,
+            first: row.querySelector('.p-first').checked, last: row.querySelector('.p-last').checked,
+            fun: row.querySelector('.p-fun').checked, impact: row.querySelector('.p-impact').checked
         });
         
         batch.update(doc(db, "decks", id), {
@@ -683,16 +652,8 @@ document.getElementById('submitMatchBtn').onclick = async () => {
             wentLastCount: increment(row.querySelector('.p-last').checked ? 1 : 0),
             funCount: increment(row.querySelector('.p-fun').checked ? 1 : 0),
             impactCount: increment(row.querySelector('.p-impact').checked ? 1 : 0),
-            [`winMethod_${winMethod.replace(/\s+/g, '_')}`]: increment(win && winMethod !== 'N/A' ? 1 : 0),
-            highestInfluenceCount: increment(row.querySelector('.p-influence').checked ? 1 : 0),
+            [`winMethod_${winMethod.replace(/\s+/g, '_')}`]: increment(win && winMethod !== 'N/A' ? 1 : 0)
         });
-
-        document.querySelectorAll('.p-win').forEach(r => {
-            r.disabled = false;
-            r.parentElement.style.opacity = "1";
-            r.parentElement.style.pointerEvents = "auto";
-        });
-
     });
     
     await batch.commit();
@@ -812,27 +773,6 @@ window.handleDeckDeletionTrigger = (id, deckName, playerName) => {
     }
 };
 
-window.handleDrawToggle = () => {
-    const drawChecks = document.querySelectorAll('.p-draw:checked');
-    const winRadios = document.querySelectorAll('.p-win');
-    
-    // If 2 or more players are marked for a draw, disable/uncheck the single winner
-    if (drawChecks.length >= 2) {
-        winRadios.forEach(radio => {
-            radio.checked = false;
-            radio.disabled = true;
-            radio.parentElement.style.opacity = "0.3"; // Visual cue
-            radio.parentElement.style.pointerEvents = "none";
-        });
-    } else {
-        winRadios.forEach(radio => {
-            radio.disabled = false;
-            radio.parentElement.style.opacity = "1";
-            radio.parentElement.style.pointerEvents = "auto";
-        });
-    }
-};
-
 async function finalizeDeckDeletion(id, playerName, merge) {
     if (merge) {
         const misc = allDecks.find(d => d.player === playerName && d.deckName.toLowerCase() === 'misc');
@@ -841,12 +781,11 @@ async function finalizeDeckDeletion(id, playerName, merge) {
             const d = snap.data();
             await updateDoc(doc(db, "decks", misc.id), {
                 wins: increment(d.wins||0), losses: increment(d.losses||0), knockouts: increment(d.knockouts||0), 
-                highestInfluenceCount: increment(d.highestInfluenceCount || 0),
                 solRingOpening: increment(d.solRingOpening||0), firstBloodCount: increment(d.firstBloodCount||0),
                 mostRampCount: increment(d.mostRampCount||0), mostDrawCount: increment(d.mostDrawCount||0),
                 funRatingTotal: increment(d.funRatingTotal||0), funRatingCount: increment(d.funRatingCount||0),
                 wentFirstCount: increment(d.wentFirstCount||0), wentLastCount: increment(d.wentLastCount||0),
-                funCount: increment(d.funCount||0), impactCount: increment(d.impactCount||0),
+                funCount: increment(d.funCount||0), impactCount: increment(d.impactCount||0)
             });
         }
     }
@@ -1050,14 +989,8 @@ function renderInsightTab() {
             draw: acc.draw + (d.mostDrawCount || 0),
             first: acc.first + (d.wentFirstCount || 0),
             last: acc.last + (d.wentLastCount || 0),
-            impact: acc.impact + (d.impactCount || 0),
-            influence: acc.influence + (d.highestInfluenceCount || 0)
-        }), {
-            games: 0, wins: 0, kos: 0,
-            blood: 0, ramp: 0, draw: 0,
-            first: 0, last: 0, impact: 0,
-            influence: 0
-        });
+            impact: acc.impact + (d.impactCount || 0)
+        }), { games: 0, wins: 0, kos: 0, blood: 0, ramp: 0, draw: 0, first: 0, last: 0, impact: 0 });
 
         const totalGames = playerStats.games || 0;
         const winRate = playerStats.games > 0 ? ((playerStats.wins / playerStats.games) * 100).toFixed(1) : 0;
@@ -1087,7 +1020,6 @@ function renderInsightTab() {
                 </div>
                 <div class="stat-badges" style="margin-top: 20px; background: rgba(0,0,0,0.3); padding: 15px; gap: 10px;">
                     <div class="stat-badge-pill pill-won">1ST PLACE <b>${playerStats.wins}</b></div>
-                    <div class="stat-badge-pill pill-influence">INFLUENCE <b>${playerStats.influence || 0}</b>
                     <div class="stat-badge-pill pill-kos">KILLS <b>${playerStats.kos}</b></div>
                     <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${playerStats.blood}</b></div>
                     <div class="stat-badge-pill pill-ramp">MOST RAMP <b>${playerStats.ramp}</b></div>
@@ -1143,7 +1075,6 @@ function renderInsightTab() {
                                 </div>
                                 <div class="stat-badges">
                                     <div class="stat-badge-pill pill-won">WINS <b>${deck.wins || 0}${calcPct(deck.wins)}</b></div>
-                                    <div class="stat-badge-pill pill-influence">INFLUENCE <b>${deck.highestInfluenceCount || 0}${calcPct(deck.highestInfluenceCount)}</b></div>
                                     <div class="stat-badge-pill" style="background:rgba(255,255,255,0.1);">GAMES <b>${total}</b></div>
                                     <div class="stat-badge-pill pill-kos">KILLS <b>${deck.knockouts || 0}</b></div>
                                     <div class="stat-badge-pill pill-blood">BLOOD <b>${deck.firstBloodCount || 0}${calcPct(deck.firstBloodCount)}</b></div>
