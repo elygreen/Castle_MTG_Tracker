@@ -250,6 +250,9 @@ function addParticipant(defaultPlayerName = null) {
         
         <div class="participant-row line-2">
             <label class="won-toggle compact-toggle"><input type="radio" name="winner" class="p-win" style="display:none">WON</label>
+            <label class="stat-pill pill-draw-match compact-pill">
+                <input type="checkbox" class="p-draw-match" style="display:none">DRAW
+            </label>
             <label class="stat-pill pill-influence compact-pill"> <input type="radio" name="influence_owner" class="p-influence" style="display:none"> Influence</label>
             <label class="stat-pill pill-blood compact-pill"><input type="radio" name="blood_owner" class="p-blood" style="display:none"> Blood</label>
             <label class="stat-pill pill-ramp compact-pill"><input type="radio" name="ramp_owner" class="p-ramp" style="display:none"> Ramp</label>
@@ -267,6 +270,11 @@ function addParticipant(defaultPlayerName = null) {
     
     const ownerSel = row.querySelector('.p-owner');
     const deckSel = row.querySelector('.p-deck');
+    const winRadio = row.querySelector('.p-win');
+    const drawCheck = row.querySelector('.p-draw-match');
+
+    winRadio.onchange = () => { if(winRadio.checked) drawCheck.checked = false; };
+    drawCheck.onchange = () => { if(drawCheck.checked) winRadio.checked = false; };
 
     ownerSel.onchange = () => {
         const playerName = ownerSel.value;
@@ -455,7 +463,8 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
                             </div>
                         </div>
                         <div class="history-stats">
-                            ${p.win ? '<div class="stat-badge-pill pill-won">WIN</div>' : ''}
+                            ${p.draw ? `<div class="stat-badge-pill pill-draw-match">MATCH DRAW</div>` : ''}
+                            ${p.win && !p.draw ? `<div class="stat-badge-pill pill-won">WIN</div>` : ''}
                             ${p.influence ? `<div class="stat-badge-pill pill-influence">HIGHEST INFLUENCE</div>` : ''}
                             ${p.kos !== "N/A" && p.kos > 0 ? `<div class="stat-badge-pill pill-kos">KOS <b>${p.kos}</b></div>` : ''}
                             ${p.funRating > 0 ? `<div class="stat-badge-pill pill-fun">★ <b>${p.funRating}</b></div>` : ''}
@@ -612,39 +621,69 @@ document.getElementById('addParticipantBtn').onclick = () => addParticipant();
 
 document.getElementById('submitMatchBtn').onclick = async () => {
     const rows = document.querySelectorAll('#gameParticipants .card');
-    if (rows.length < 2) { alert("Select at least 2 participants!"); return; }
-    const hasWinner = Array.from(document.querySelectorAll('.p-win')).some(radio => radio.checked);
-    if (!hasWinner) { alert("Please select a winner before submitting!"); return; }
-    for (const row of rows) { if (!row.querySelector('.p-deck').value) { alert("Ensure every player has a deck selected."); return; } }
+    
+    // 1. Validation Logic
+    const winnerSelected = Array.from(document.querySelectorAll('.p-win')).some(r => r.checked);
+    const drawParticipants = Array.from(document.querySelectorAll('.p-draw-match')).filter(c => c.checked);
+
+    if (!winnerSelected && drawParticipants.length < 2) { 
+        alert("Please select a Winner or at least 2 players for a Draw!"); 
+        return; 
+    }
+
+    // 2. Prevent submission if decks aren't selected
+    for (const row of rows) { 
+        if (!row.querySelector('.p-deck').value) { 
+            alert("Ensure every player has a deck selected."); 
+            return; 
+        } 
+    }
 
     const saltScore = document.getElementById('matchSaltScore').value;
     const winMethod = document.getElementById('matchWinMethod').value;
     const matchComment = document.getElementById('matchComment').value.trim();
     const batch = writeBatch(db);
     const matchParticipants = [];
-    
+
+    // 3. Process Each Participant
     rows.forEach(row => {
         const id = row.querySelector('.p-deck').value;
         const deckObj = allDecks.find(d => d.id === id);
-        const win = row.querySelector('.p-win').checked;
-        const funRating = parseInt(row.querySelector('.p-fun-rating').value) || 0;
         
+        // Key logic: Evaluate Win vs Draw for THIS specific row
+        const isWinner = row.querySelector('.p-win').checked;
+        const isDraw = row.querySelector('.p-draw-match').checked;
+        const creditedWin = isWinner || isDraw; // Both states count as a win for stats
+
+        const funRating = parseInt(row.querySelector('.p-fun-rating').value) || 0;
         const rawKills = row.querySelector('.p-kills').value;
         const kills = rawKills === "na" ? 0 : parseInt(rawKills);
         
+        // Object for Match History
         matchParticipants.push({
-            deckId: id, player: deckObj.player, deckName: deckObj.deckName, deckTags: deckObj.deckTags || [], win, 
+            deckId: id, 
+            player: deckObj.player, 
+            deckName: deckObj.deckName, 
+            deckTags: deckObj.deckTags || [], 
+            win: creditedWin,
+            draw: isDraw,
+            influence: row.querySelector('.p-influence').checked,
             kos: rawKills === "na" ? "N/A" : kills,
             funRating: funRating,
-            influence: row.querySelector('.p-influence').checked,
-            sol: row.querySelector('.p-sol').checked, blood: row.querySelector('.p-blood').checked,
-            ramp: row.querySelector('.p-ramp').checked, draw: row.querySelector('.p-draw').checked,
-            first: row.querySelector('.p-first').checked, last: row.querySelector('.p-last').checked,
-            fun: row.querySelector('.p-fun').checked, impact: row.querySelector('.p-impact').checked
+            sol: row.querySelector('.p-sol').checked, 
+            blood: row.querySelector('.p-blood').checked,
+            ramp: row.querySelector('.p-ramp').checked, 
+            mostDraw: row.querySelector('.p-draw').checked, // Renamed to distinguish from Match Draw
+            first: row.querySelector('.p-first').checked, 
+            last: row.querySelector('.p-last').checked,
+            fun: row.querySelector('.p-fun').checked, 
+            impact: row.querySelector('.p-impact').checked
         });
         
+        // Update Lifetime Deck Stats
         batch.update(doc(db, "decks", id), {
-            wins: increment(win ? 1 : 0), losses: increment(win ? 0 : 1), 
+            wins: increment(creditedWin ? 1 : 0),
+            losses: increment(creditedWin ? 0 : 1),
             knockouts: increment(kills),
             funRatingTotal: increment(funRating),
             funRatingCount: increment(funRating > 0 ? 1 : 0),
@@ -657,12 +696,12 @@ document.getElementById('submitMatchBtn').onclick = async () => {
             funCount: increment(row.querySelector('.p-fun').checked ? 1 : 0),
             impactCount: increment(row.querySelector('.p-impact').checked ? 1 : 0),
             highestInfluenceCount: increment(row.querySelector('.p-influence').checked ? 1 : 0),
-            [`winMethod_${winMethod.replace(/\s+/g, '_')}`]: increment(win && winMethod !== 'N/A' ? 1 : 0)
+            [`winMethod_${winMethod.replace(/\s+/g, '_')}`]: increment(isWinner && winMethod !== 'N/A' ? 1 : 0)
         });
     });
     
+    // 4. Commit to Database
     await batch.commit();
-    // Save match with the comment
     await addDoc(collection(db, "matches"), { 
         timestamp: serverTimestamp(), 
         participants: matchParticipants,
@@ -673,9 +712,10 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     
     alert("Match Recorded!");
 
-    // Reset Logic: Keep players, clear stats and comment
+    // 5. UI Reset
     document.getElementById('matchComment').value = '';
     document.getElementById('matchWinMethod').value = 'N/A';
+    document.getElementById('matchSaltScore').value = 'N/A';
     rows.forEach(row => {
         row.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
         row.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
@@ -1084,7 +1124,7 @@ function renderInsightTab() {
                                     <div class="stat-badge-pill pill-kos">KILLS <b>${deck.knockouts || 0}</b></div>
                                     <div class="stat-badge-pill pill-blood">BLOOD <b>${deck.firstBloodCount || 0}${calcPct(deck.firstBloodCount)}</b></div>
                                     <div class="stat-badge-pill pill-ramp">RAMP <b>${deck.mostRampCount || 0}${calcPct(deck.mostRampCount)}</b></div>
-                                    <div class="stat-badge-pill pill-draw">DRAW <b>${deck.mostDrawCount || 0}${calcPct(deck.mostDrawCount)}</b></div>
+                                    <div class="stat-badge-pill pill-draw">MOST DRAW <b>${deck.mostDrawCount || 0}${calcPct(deck.mostDrawCount)}</b></div>
                                     <div class="stat-badge-pill pill-first">1ST <b>${deck.wentFirstCount || 0}${calcPct(deck.wentFirstCount)}</b></div>
                                     <div class="stat-badge-pill pill-last">LAST <b>${deck.wentLastCount || 0}${calcPct(deck.wentLastCount)}</b></div>
                                     <div class="stat-badge-pill pill-impact">IMPACT <b>${deck.impactCount || 0}${calcPct(deck.impactCount)}</b></div>

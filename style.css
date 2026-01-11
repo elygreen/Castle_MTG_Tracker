@@ -21,6 +21,7 @@
     --clr-fun: #e91e63;
     --clr-impact: #ff9800;
     --clr-influence: #d10707;
+    --clr-draw-alt: #607d8b;
 }
 
 body { 
@@ -115,6 +116,7 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
 
 /* Leaderboard Pills Backgrounds */
 .pill-won { background: var(--success); }
+.pill-draw-match { background: var(--clr-draw-alt); color: #fff; }
 .pill-kos { background: var(--danger); }
 .pill-sol { background: var(--clr-sol); color: #000; }
 .pill-sol b { color: #000; }
@@ -382,6 +384,10 @@ button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700;
     background: var(--clr-influence) !important; 
     color: #000; 
     border-color: rgba(0,0,0,0.2); 
+}
+.pill-draw-match:has(input:checked) { 
+    background: var(--clr-draw-alt) !important; 
+    border-color: rgba(255,255,255,0.4); 
 }
 
 .delete-btn-sm { background: var(--danger); color: white; font-size: 0.65rem; padding: 4px 10px; border-radius: 6px; }
