@@ -18,7 +18,6 @@
     --clr-draw: #2196f3;
     --clr-first: #9c27b0;
     --clr-last: #795548;
-    --clr-influence: #d10707;
     --clr-draw-alt: #607d8b;
 }
 
@@ -108,7 +107,6 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
 .pill-draw { background: var(--clr-draw); }
 .pill-first { background: var(--clr-first); }
 .pill-last { background: var(--clr-last); }
-.pill-influence { background: var(--clr-influence); color: #000; }
 
 /* Roster UI Enhancements */
 .roster-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
@@ -331,11 +329,6 @@ button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700;
 .pill-first:has(input:checked) { background: var(--clr-first) !important; border-color: rgba(255,255,255,0.3); }
 .pill-last:has(input:checked) { background: var(--clr-last) !important; border-color: rgba(255,255,255,0.3); }
 .pill-sol:has(input:checked) { background: var(--clr-sol) !important; color: #000; border-color: rgba(0,0,0,0.2); }
-.pill-influence:has(input:checked) { 
-    background: var(--clr-influence) !important; 
-    color: #000; 
-    border-color: rgba(0,0,0,0.2); 
-}
 
 .delete-btn-sm { background: var(--danger); color: white; font-size: 0.65rem; padding: 4px 10px; border-radius: 6px; }
 .edit-btn-sm { background: transparent; border: 1px solid var(--border); color: var(--text-dim); font-size: 0.6rem; padding: 2px 8px; border-radius: 4px; }

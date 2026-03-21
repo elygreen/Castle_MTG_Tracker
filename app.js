@@ -241,7 +241,6 @@ function addParticipant(defaultPlayerName = null) {
         </div>
         
         <div class="participant-row line-2">
-            <label class="stat-pill pill-influence compact-pill"> <input type="radio" name="influence_owner" class="p-influence" style="display:none"> Influence</label>
             <label class="stat-pill pill-blood compact-pill"><input type="radio" name="blood_owner" class="p-blood" style="display:none"> Blood</label>
             <label class="stat-pill pill-ramp compact-pill"><input type="radio" name="ramp_owner" class="p-ramp" style="display:none"> Ramp</label>
             <label class="stat-pill pill-draw compact-pill"><input type="radio" name="draw_owner" class="p-draw" style="display:none"> Draw</label>
@@ -372,7 +371,6 @@ onSnapshot(query(collection(db, "decks")), (snapshot) => {
                     </div>
                 </div>
                 <div class="stat-badges">
-                    <div class="stat-badge-pill pill-influence">INFLUENCE <b>${deck.highestInfluenceCount || 0}</b></div>
                     <div class="stat-badge-pill pill-sol">SOL RING <b>${deck.solRingOpening || 0}</b></div>
                     <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${deck.firstBloodCount || 0}</b></div>
                     <div class="stat-badge-pill pill-ramp">MOST RAMP <b>${deck.mostRampCount || 0}</b></div>
@@ -421,7 +419,6 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
                             </div>
                         </div>
                         <div class="history-stats">
-                            ${p.influence ? `<div class="stat-badge-pill pill-influence">HIGHEST INFLUENCE</div>` : ''}
                             ${p.funRating > 0 ? `<div class="stat-badge-pill pill-fun">★ <b>${p.funRating}</b></div>` : ''}
                             ${p.sol ? `<div class="stat-badge-pill pill-sol">SOL RING</div>` : ''}
                             ${p.blood ? `<div class="stat-badge-pill pill-blood">FIRST BLOOD</div>` : ''}
@@ -495,7 +492,7 @@ document.getElementById('addPlayerBtn').onclick = async () => {
     await addDoc(collection(db, "decks"), {
         firstBloodCount: 0, mostRampCount: 0, 
         mostDrawCount: 0, solRingOpening: 0, wentFirstCount: 0, 
-        funRatingTotal: 0, funRatingCount: 0, highestInfluenceCount: 0,
+        funRatingTotal: 0, funRatingCount: 0,
     });
     nameInput.value = '';
 };
@@ -596,7 +593,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
             player: deckObj.player, 
             deckName: deckObj.deckName, 
             deckTags: deckObj.deckTags || [], 
-            influence: row.querySelector('.p-influence').checked,
             funRating: funRating,
             sol: row.querySelector('.p-sol').checked, 
             blood: row.querySelector('.p-blood').checked,
@@ -617,7 +613,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
             mostDrawCount: increment(row.querySelector('.p-draw').checked ? 1 : 0),
             wentFirstCount: increment(row.querySelector('.p-first').checked ? 1 : 0),
             wentLastCount: increment(row.querySelector('.p-last').checked ? 1 : 0),
-            highestInfluenceCount: increment(row.querySelector('.p-influence').checked ? 1 : 0),
         });
     });
     
