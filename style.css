@@ -85,19 +85,6 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
     z-index: 2; /* Keeps them above the commander art */
 }
 
-.win-rate-badge {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid var(--border);
-    padding: 8px 12px;
-    border-radius: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 70px;
-}
-.win-rate-val { font-size: 1.2rem; font-weight: 900; color: var(--accent); line-height: 1; }
-.win-rate-label { font-size: 0.55rem; font-weight: 800; color: var(--text-dim); margin-top: 3px; }
-
 /* Tag Styles */
 .deck-tags-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .individual-tag {
@@ -115,8 +102,6 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
 .stat-badge-pill b { color: white; opacity: 0.9; }
 
 /* Leaderboard Pills Backgrounds */
-.pill-won { background: var(--success); }
-.pill-draw-match { background: var(--clr-draw-alt); color: #fff; }
 .pill-kos { background: var(--danger); }
 .pill-sol { background: var(--clr-sol); color: #000; }
 .pill-sol b { color: #000; }
@@ -191,8 +176,6 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
     border-bottom: 1px solid rgba(255,255,255,0.05); 
 }
 .history-participant:last-child { border-bottom: none; }
-.history-participant.winner-row { background: rgba(46, 125, 50, 0.15); border-left: 4px solid var(--success); border-radius: 4px; }
-
 .history-deck-info { display: flex; flex-direction: column; flex: 1; }
 .history-player-name { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800; }
 .history-deck-name { font-size: 0.9rem; font-weight: 700; }
@@ -346,32 +329,6 @@ button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700;
     border: 1px solid rgba(255,255,255,0.05);
 }
 
-.won-toggle { 
-    display: flex; 
-    align-items: center; 
-    gap: 5px; 
-    background: #2a2d31; 
-    padding: 6px 10px; 
-    border-radius: 6px; 
-    cursor: pointer; 
-    font-size: 0.65rem; 
-    font-weight: 800; 
-    border: 1px solid transparent; 
-    transition: all 0.2s ease;
-}
-
-.won-toggle.compact-toggle { 
-    padding: 5px 8px; 
-    font-size: 0.55rem; 
-}
-
-/* COLORIZED STATES WHEN CHECKED */
-.won-toggle:has(input:checked) { 
-    border-color: var(--success) !important; 
-    background: var(--success) !important; 
-    color: #fff !important; 
-}
-
 .pill-blood:has(input:checked) { background: var(--clr-blood) !important; border-color: rgba(255,255,255,0.3); }
 .pill-ramp:has(input:checked) { background: var(--clr-ramp) !important; border-color: rgba(255,255,255,0.3); }
 .pill-draw:has(input:checked) { background: var(--clr-draw) !important; border-color: rgba(255,255,255,0.3); }
@@ -384,10 +341,6 @@ button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700;
     background: var(--clr-influence) !important; 
     color: #000; 
     border-color: rgba(0,0,0,0.2); 
-}
-.pill-draw-match:has(input:checked) { 
-    background: var(--clr-draw-alt) !important; 
-    border-color: rgba(255,255,255,0.4); 
 }
 
 .delete-btn-sm { background: var(--danger); color: white; font-size: 0.65rem; padding: 4px 10px; border-radius: 6px; }

@@ -241,10 +241,6 @@ function addParticipant(defaultPlayerName = null) {
         </div>
         
         <div class="participant-row line-2">
-            <label class="won-toggle compact-toggle"><input type="radio" name="winner" class="p-win" style="display:none">WON</label>
-            <label class="stat-pill pill-draw-match compact-pill">
-                <input type="checkbox" class="p-draw-match" style="display:none">DRAW
-            </label>
             <label class="stat-pill pill-influence compact-pill"> <input type="radio" name="influence_owner" class="p-influence" style="display:none"> Influence</label>
             <label class="stat-pill pill-blood compact-pill"><input type="radio" name="blood_owner" class="p-blood" style="display:none"> Blood</label>
             <label class="stat-pill pill-ramp compact-pill"><input type="radio" name="ramp_owner" class="p-ramp" style="display:none"> Ramp</label>
@@ -262,11 +258,6 @@ function addParticipant(defaultPlayerName = null) {
     
     const ownerSel = row.querySelector('.p-owner');
     const deckSel = row.querySelector('.p-deck');
-    const winRadio = row.querySelector('.p-win');
-    const drawCheck = row.querySelector('.p-draw-match');
-
-    winRadio.onchange = () => { if(winRadio.checked) drawCheck.checked = false; };
-    drawCheck.onchange = () => { if(drawCheck.checked) winRadio.checked = false; };
 
     ownerSel.onchange = () => {
         const playerName = ownerSel.value;
@@ -348,10 +339,7 @@ onSnapshot(query(collection(db, "decks")), (snapshot) => {
     });
 
     allDecks.forEach(deck => {
-        const wins = deck.wins || 0;
-        const losses = deck.losses || 0;
-        const total = wins + losses;
-        const rate = total > 0 ? ((wins / total) * 100).toFixed(0) : 0;
+        const total = deck.gamesPlayed || ((deck.wins || 0) + (deck.losses || 0)) || 0;
         const tags = deck.deckTags || [];
         
         const li = document.createElement('li');
@@ -384,19 +372,8 @@ onSnapshot(query(collection(db, "decks")), (snapshot) => {
                             ${tags.map(t => `<span class="individual-tag" style="${getTagStyle(t)}">${t}</span>`).join('')}
                         </div>
                     </div>
-                    <div style="display: flex; gap: 8px;">
-                        <div class="win-rate-badge">
-                            <span class="win-rate-val">${total}</span>
-                            <span class="win-rate-label">GAMES</span>
-                        </div>
-                        <div class="win-rate-badge">
-                            <span class="win-rate-val">${rate}%</span>
-                            <span class="win-rate-label">WIN RATE</span>
-                        </div>
-                    </div>
                 </div>
                 <div class="stat-badges">
-                    <div class="stat-badge-pill pill-won">WINS <b>${wins}</b></div>
                     <div class="stat-badge-pill pill-influence">INFLUENCE <b>${deck.highestInfluenceCount || 0}</b></div>
                     <div class="stat-badge-pill pill-sol">SOL RING <b>${deck.solRingOpening || 0}</b></div>
                     <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${deck.firstBloodCount || 0}</b></div>
@@ -429,23 +406,17 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
             <div class="history-header">
                 <div class="history-date">${dateStr}</div>
                 <div style="display:flex; gap:10px; align-items:center;">
-                    ${match.winMethod && match.winMethod !== 'N/A' ? `
-                        <div class="stat-badge-pill" style="background: var(--accent); font-size: 0.6rem; border: 1px solid rgba(255,255,255,0.2);">
-                            ${match.winMethod.toUpperCase()}
-                        </div>` : ''}
-                    
                     ${match.saltScore && match.saltScore !== 'N/A' ? `
                         <div class="stat-badge-pill" style="background: var(--mtg-orange); font-size: 0.6rem;">
                             SALT: ${match.saltScore}
                         </div>` : ''}
                     
                     <div class="history-date">${match.participants.length} Players</div>
-                    <button class="edit-btn-sm" onclick="handleEditMatchTrigger('${matchId}')">Edit</button>
                 </div>
             </div>
             <div class="history-body">
                 ${match.participants.map(p => `
-                    <div class="history-participant ${p.win ? 'winner-row' : ''}">
+                    <div class="history-participant">
                         <div class="history-deck-info">
                             <span class="history-player-name" style="color:${getPlayerColor(p.player)}">${p.player}</span>
                             <span class="history-deck-name">${p.deckName}</span>
@@ -454,8 +425,6 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
                             </div>
                         </div>
                         <div class="history-stats">
-                            ${p.draw ? `<div class="stat-badge-pill pill-draw-match">MATCH DRAW</div>` : ''}
-                            ${p.win && !p.draw ? `<div class="stat-badge-pill pill-won">WIN</div>` : ''}
                             ${p.influence ? `<div class="stat-badge-pill pill-influence">HIGHEST INFLUENCE</div>` : ''}
                             ${p.funRating > 0 ? `<div class="stat-badge-pill pill-fun">★ <b>${p.funRating}</b></div>` : ''}
                             ${p.sol ? `<div class="stat-badge-pill pill-sol">SOL RING</div>` : ''}
@@ -531,7 +500,6 @@ document.getElementById('addPlayerBtn').onclick = async () => {
     if (!name || allPlayers.some(p => p.name === name)) return;
     await addDoc(collection(db, "players"), { name, color: selectedNewPlayerColor });
     await addDoc(collection(db, "decks"), {
-        player: name, deckName: "Misc", deckTags: ["General"], wins: 0, losses: 0, 
         firstBloodCount: 0, mostRampCount: 0, 
         mostDrawCount: 0, solRingOpening: 0, wentFirstCount: 0, 
         wentLastCount: 0, funCount: 0, impactCount: 0,
@@ -584,8 +552,6 @@ document.getElementById('addDeckBtn').onclick = async () => {
         commanderImage: commanderData.image,
         colorIdentity: commanderData.colorIdentity,
         deckTags: checkedTags,
-        wins: 0,
-        losses: 0,
         solRingOpening: 0,
         firstBloodCount: 0,
         mostRampCount: 0,
@@ -612,13 +578,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     const rows = document.querySelectorAll('#gameParticipants .card');
     
     // 1. Validation Logic
-    const winnerSelected = Array.from(document.querySelectorAll('.p-win')).some(r => r.checked);
-    const drawParticipants = Array.from(document.querySelectorAll('.p-draw-match')).filter(c => c.checked);
-
-    if (!winnerSelected && drawParticipants.length < 2) { 
-        alert("Please select a Winner or at least 2 players for a Draw!"); 
-        return; 
-    }
 
     // 2. Prevent submission if decks aren't selected
     for (const row of rows) { 
@@ -629,7 +588,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     }
 
     const saltScore = document.getElementById('matchSaltScore').value;
-    const winMethod = document.getElementById('matchWinMethod').value;
     const matchComment = document.getElementById('matchComment').value.trim();
     const batch = writeBatch(db);
     const matchParticipants = [];
@@ -640,10 +598,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
         const deckObj = allDecks.find(d => d.id === id);
         
         // Key logic: Evaluate Win vs Draw for THIS specific row
-        const isWinner = row.querySelector('.p-win').checked;
-        const isDraw = row.querySelector('.p-draw-match').checked;
-        const creditedWin = isWinner || isDraw; // Both states count as a win for stats
-
         const funRating = parseInt(row.querySelector('.p-fun-rating').value) || 0;
         
         // Object for Match History
@@ -652,8 +606,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
             player: deckObj.player, 
             deckName: deckObj.deckName, 
             deckTags: deckObj.deckTags || [], 
-            win: creditedWin,
-            draw: isDraw,
             influence: row.querySelector('.p-influence').checked,
             funRating: funRating,
             sol: row.querySelector('.p-sol').checked, 
@@ -668,8 +620,7 @@ document.getElementById('submitMatchBtn').onclick = async () => {
         
         // Update Lifetime Deck Stats
         batch.update(doc(db, "decks", id), {
-            wins: increment(creditedWin ? 1 : 0),
-            losses: increment(creditedWin ? 0 : 1),
+            gamesPlayed: increment(1),
             funRatingTotal: increment(funRating),
             funRatingCount: increment(funRating > 0 ? 1 : 0),
             solRingOpening: increment(row.querySelector('.p-sol').checked ? 1 : 0),
@@ -681,7 +632,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
             funCount: increment(row.querySelector('.p-fun').checked ? 1 : 0),
             impactCount: increment(row.querySelector('.p-impact').checked ? 1 : 0),
             highestInfluenceCount: increment(row.querySelector('.p-influence').checked ? 1 : 0),
-            [`winMethod_${winMethod.replace(/\s+/g, '_')}`]: increment(isWinner && winMethod !== 'N/A' ? 1 : 0)
         });
     });
     
@@ -691,7 +641,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
         timestamp: serverTimestamp(), 
         participants: matchParticipants,
         saltScore: saltScore,
-        winMethod: winMethod,
         comment: matchComment 
     });
     
@@ -699,7 +648,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
 
     // 5. UI Reset
     document.getElementById('matchComment').value = '';
-    document.getElementById('matchWinMethod').value = 'N/A';
     document.getElementById('matchSaltScore').value = 'N/A';
     rows.forEach(row => {
         row.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
@@ -746,48 +694,10 @@ function handlePlayerDeletion(id, name) {
     ]);
 }
 
-window.handleEditMatchTrigger = async (matchId) => {
-    const matchSnap = await getDoc(doc(db, "matches", matchId));
-    const match = matchSnap.data();
-    const actions = match.participants.map(p => ({
-        label: `${p.player} (${p.deckName})`, color: p.win ? "var(--success)" : "var(--surface)",
-        onClick: () => finalizeMatchEdit(matchId, p.deckId || null, p.player, p.deckName)
-    }));
-    openModal("Change Winner", "Select the actual winner. Stat totals will update automatically.", actions);
-};
-
 window.selectInsightDeck = (deckId) => {
     selectedInsightDeckId = deckId;
     renderInsightTab(); // Re-render to update the chart and list highlights
 };
-
-
-async function finalizeMatchEdit(matchId, newWinnerDeckId, playerName, deckName) {
-    const batch = writeBatch(db);
-    const matchRef = doc(db, "matches", matchId);
-    const matchSnap = await getDoc(matchRef);
-    const matchData = matchSnap.data();
-    
-    const oldWinner = matchData.participants.find(p => p.win === true);
-    const oldWinnerId = oldWinner ? oldWinner.deckId : null;
-
-    // 1. Update the Match History record
-    const updatedParticipants = matchData.participants.map(p => ({ 
-        ...p, 
-        win: p.deckId === newWinnerDeckId // Use ID for certainty
-    }));
-    batch.update(matchRef, { participants: updatedParticipants });
-
-    // 2. Adjust global deck stats
-    if (oldWinnerId && oldWinnerId !== newWinnerDeckId) { 
-        batch.update(doc(db, "decks", oldWinnerId), { wins: increment(-1), losses: increment(1) }); 
-    }
-    if (newWinnerDeckId && oldWinnerId !== newWinnerDeckId) { 
-        batch.update(doc(db, "decks", newWinnerDeckId), { wins: increment(1), losses: increment(-1) }); 
-    }
-    
-    await batch.commit();
-}
 
 window.handleDeckDeletionTrigger = (id, deckName, playerName) => {
     const isMisc = deckName.toLowerCase() === 'misc';
@@ -810,7 +720,6 @@ async function finalizeDeckDeletion(id, playerName, merge) {
             const snap = await getDoc(doc(db, "decks", id));
             const d = snap.data();
             await updateDoc(doc(db, "decks", misc.id), {
-                wins: increment(d.wins||0), losses: increment(d.losses||0),
                 solRingOpening: increment(d.solRingOpening||0), firstBloodCount: increment(d.firstBloodCount||0),
                 mostRampCount: increment(d.mostRampCount||0), mostDrawCount: increment(d.mostDrawCount||0),
                 funRatingTotal: increment(d.funRatingTotal||0), funRatingCount: increment(d.funRatingCount||0),
@@ -1011,18 +920,16 @@ function renderInsightTab() {
 
         // Calculate Totals
         const playerStats = playerDecks.reduce((acc, d) => ({
-            games: acc.games + (d.wins || 0) + (d.losses || 0),
-            wins: acc.wins + (d.wins || 0),
+            games: acc.games + (d.gamesPlayed || ((d.wins || 0) + (d.losses || 0)) || 0),
             blood: acc.blood + (d.firstBloodCount || 0),
             ramp: acc.ramp + (d.mostRampCount || 0),
             draw: acc.draw + (d.mostDrawCount || 0),
             first: acc.first + (d.wentFirstCount || 0),
             last: acc.last + (d.wentLastCount || 0),
             impact: acc.impact + (d.impactCount || 0)
-        }), { games: 0, wins: 0, blood: 0, ramp: 0, draw: 0, first: 0, last: 0, impact: 0 });
+        }), { games: 0, blood: 0, ramp: 0, draw: 0, first: 0, last: 0, impact: 0 });
 
         const totalGames = playerStats.games || 0;
-        const winRate = playerStats.games > 0 ? ((playerStats.wins / playerStats.games) * 100).toFixed(1) : 0;
         const playerColor = getPlayerColor(selectedInsightPlayer);
 
         detailContainer.innerHTML = `
@@ -1032,23 +939,8 @@ function renderInsightTab() {
                         <h1 style="margin: 0; font-size: 2.5rem; font-weight: 900; color: ${playerColor}; text-transform: uppercase; letter-spacing: -1px;">${selectedInsightPlayer}</h1>
                         <p style="margin: 0; color: var(--text-dim); font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Overall Performance</p>
                     </div>
-                    <div style="display: flex; gap: 15px;">
-                        <div class="win-rate-badge" style="padding: 15px 25px; border-color: ${playerColor}44;">
-                            <span class="win-rate-val" style="font-size: 2rem;">${winRate}%</span>
-                            <span class="win-rate-label">TOTAL WIN RATE</span>
-                        </div>
-                        <div class="win-rate-badge" style="padding: 15px 25px; border-color: rgba(255,255,255,0.1);">
-                            <span class="win-rate-val" style="font-size: 2rem; color: #fff;">${playerStats.games}</span>
-                            <span class="win-rate-label">TOTAL GAMES</span>
-                        </div>
-                        <div class="win-rate-badge" style="padding: 15px 25px; border-color: rgba(255,255,255,0.1);">
-                            <span class="win-rate-val" style="font-size: 2rem; color: #fff;">${playerDecks.length}</span>
-                            <span class="win-rate-label">UNIQUE DECKS</span>
-                        </div>
-                    </div>
                 </div>
                 <div class="stat-badges" style="margin-top: 20px; background: rgba(0,0,0,0.3); padding: 15px; gap: 10px;">
-                    <div class="stat-badge-pill pill-won">1ST PLACE <b>${playerStats.wins}</b></div>
                     <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${playerStats.blood}</b></div>
                     <div class="stat-badge-pill pill-ramp">MOST RAMP <b>${playerStats.ramp}</b></div>
                     <div class="stat-badge-pill pill-draw">MOST DRAW <b>${playerStats.draw}</b></div>
@@ -1061,8 +953,7 @@ function renderInsightTab() {
             <div class="insight-grid">
                 <div id="insightDeckList" style="display: flex; flex-direction: column; gap: 15px;">
                     ${playerDecks.map(deck => {
-                        const total = (deck.wins || 0) + (deck.losses || 0);
-                        const rate = total > 0 ? ((deck.wins / total) * 100).toFixed(0) : 0;
+                        const total = deck.gamesPlayed || ((deck.wins || 0) + (deck.losses || 0)) || 0;
                         const bgArt = deck.commanderImage ? `url(${deck.commanderImage})` : 'none';
                         const calcPct = (val) => total > 0 ? ` (${((val / total) * 100).toFixed(0)}%)` : ' (0%)';
                         return `
@@ -1088,21 +979,8 @@ function renderInsightTab() {
                                             ${(deck.deckTags || []).map(t => `<span class="individual-tag" style="${getTagStyle(t)}">${t}</span>`).join('')}
                                         </div>
                                     </div>
-
-                                    <div style="display: flex; gap: 8px;">
-                                        <div class="win-rate-badge">
-                                            <span class="win-rate-val">${total}</span>
-                                            <span class="win-rate-label">GAMES</span>
-                                        </div>
-                                        <div class="win-rate-badge">
-                                            <span class="win-rate-val">${rate}%</span>
-                                            <span class="win-rate-label">WIN RATE</span>
-                                        </div>
-                                    </div>
-
                                 </div>
                                 <div class="stat-badges">
-                                    <div class="stat-badge-pill pill-won">WINS <b>${deck.wins || 0}${calcPct(deck.wins)}</b></div>
                                     <div class="stat-badge-pill" style="background:rgba(255,255,255,0.1);">GAMES <b>${total}</b></div>
                                     <div class="stat-badge-pill pill-blood">BLOOD <b>${deck.firstBloodCount || 0}${calcPct(deck.firstBloodCount)}</b></div>
                                     <div class="stat-badge-pill pill-ramp">RAMP <b>${deck.mostRampCount || 0}${calcPct(deck.mostRampCount)}</b></div>
@@ -1122,7 +1000,6 @@ function renderInsightTab() {
                     <div class="chart-controls">
                         <select id="insightStatSelect" style="margin:0;">
                             <option value="games">Total Games played</option>
-                            <option value="wins">Total Wins</option>
                         </select>
                     </div>
                     <canvas id="insightChart"></canvas>
@@ -1173,13 +1050,13 @@ function initInsightChart(decks, stat = 'games') {
 
     // Prepare Data
     const sortedDecks = [...decks].sort((a, b) => {
-        const valA = stat === 'wins' ? (a.wins || 0) : ((a.wins || 0) + (a.losses || 0));
-        const valB = stat === 'wins' ? (b.wins || 0) : ((b.wins || 0) + (b.losses || 0));
+        const valA = a.gamesPlayed || ((a.wins || 0) + (a.losses || 0)) || 0;
+        const valB = b.gamesPlayed || ((b.wins || 0) + (b.losses || 0)) || 0;
         return valB - valA;
     });
 
     const dataLabels = sortedDecks.map(d => d.deckName);
-    const dataValues = sortedDecks.map(d => stat === 'wins' ? (d.wins || 0) : ((d.wins || 0) + (d.losses || 0)));
+    const dataValues = sortedDecks.map(d => d.gamesPlayed || ((d.wins || 0) + (d.losses || 0)) || 0);
     const PALETTE = ["#3d85ff", "#ff4444", "#4caf50", "#ffeb3b", "#9c27b0", "#ff9800", "#00bcd4", "#e91e63"];
     const backgroundColors = sortedDecks.map((d, i) => {
         const baseColor = PALETTE[i % PALETTE.length];
