@@ -228,14 +228,6 @@ function addParticipant(defaultPlayerName = null) {
                     ${allPlayers.map(p => `<option value="${p.name}" style="color:${p.color}; font-weight:bold;">${p.name}</option>`).join('')}
                 </select>
                 <select class="p-deck"><option value="" disabled selected>Deck...</option></select>
-                <select class="p-kills">
-                    <option value="na" selected>N/A KOs</option>
-                    <option value="0">0 KO's</option>
-                    <option value="1">1 KO</option>
-                    <option value="2">2 KO's</option>
-                    <option value="3">3 KO's</option>
-                    <option value="4">4 KO's</option>
-                </select>
                 <select class="p-fun-rating">
                     <option value="0">N/A Fun</option>
                     <option value="1">1/5</option>
@@ -406,7 +398,6 @@ onSnapshot(query(collection(db, "decks")), (snapshot) => {
                 <div class="stat-badges">
                     <div class="stat-badge-pill pill-won">WINS <b>${wins}</b></div>
                     <div class="stat-badge-pill pill-influence">INFLUENCE <b>${deck.highestInfluenceCount || 0}</b></div>
-                    <div class="stat-badge-pill pill-kos">KILLS <b>${deck.knockouts || 0}</b></div>
                     <div class="stat-badge-pill pill-sol">SOL RING <b>${deck.solRingOpening || 0}</b></div>
                     <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${deck.firstBloodCount || 0}</b></div>
                     <div class="stat-badge-pill pill-ramp">MOST RAMP <b>${deck.mostRampCount || 0}</b></div>
@@ -466,7 +457,6 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
                             ${p.draw ? `<div class="stat-badge-pill pill-draw-match">MATCH DRAW</div>` : ''}
                             ${p.win && !p.draw ? `<div class="stat-badge-pill pill-won">WIN</div>` : ''}
                             ${p.influence ? `<div class="stat-badge-pill pill-influence">HIGHEST INFLUENCE</div>` : ''}
-                            ${p.kos !== "N/A" && p.kos > 0 ? `<div class="stat-badge-pill pill-kos">KOS <b>${p.kos}</b></div>` : ''}
                             ${p.funRating > 0 ? `<div class="stat-badge-pill pill-fun">★ <b>${p.funRating}</b></div>` : ''}
                             ${p.sol ? `<div class="stat-badge-pill pill-sol">SOL RING</div>` : ''}
                             ${p.blood ? `<div class="stat-badge-pill pill-blood">FIRST BLOOD</div>` : ''}
@@ -542,7 +532,7 @@ document.getElementById('addPlayerBtn').onclick = async () => {
     await addDoc(collection(db, "players"), { name, color: selectedNewPlayerColor });
     await addDoc(collection(db, "decks"), {
         player: name, deckName: "Misc", deckTags: ["General"], wins: 0, losses: 0, 
-        knockouts: 0, firstBloodCount: 0, mostRampCount: 0, 
+        firstBloodCount: 0, mostRampCount: 0, 
         mostDrawCount: 0, solRingOpening: 0, wentFirstCount: 0, 
         wentLastCount: 0, funCount: 0, impactCount: 0,
         funRatingTotal: 0, funRatingCount: 0, highestInfluenceCount: 0,
@@ -596,7 +586,6 @@ document.getElementById('addDeckBtn').onclick = async () => {
         deckTags: checkedTags,
         wins: 0,
         losses: 0,
-        knockouts: 0,
         solRingOpening: 0,
         firstBloodCount: 0,
         mostRampCount: 0,
@@ -656,8 +645,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
         const creditedWin = isWinner || isDraw; // Both states count as a win for stats
 
         const funRating = parseInt(row.querySelector('.p-fun-rating').value) || 0;
-        const rawKills = row.querySelector('.p-kills').value;
-        const kills = rawKills === "na" ? 0 : parseInt(rawKills);
         
         // Object for Match History
         matchParticipants.push({
@@ -668,7 +655,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
             win: creditedWin,
             draw: isDraw,
             influence: row.querySelector('.p-influence').checked,
-            kos: rawKills === "na" ? "N/A" : kills,
             funRating: funRating,
             sol: row.querySelector('.p-sol').checked, 
             blood: row.querySelector('.p-blood').checked,
@@ -684,7 +670,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
         batch.update(doc(db, "decks", id), {
             wins: increment(creditedWin ? 1 : 0),
             losses: increment(creditedWin ? 0 : 1),
-            knockouts: increment(kills),
             funRatingTotal: increment(funRating),
             funRatingCount: increment(funRating > 0 ? 1 : 0),
             solRingOpening: increment(row.querySelector('.p-sol').checked ? 1 : 0),
@@ -825,7 +810,7 @@ async function finalizeDeckDeletion(id, playerName, merge) {
             const snap = await getDoc(doc(db, "decks", id));
             const d = snap.data();
             await updateDoc(doc(db, "decks", misc.id), {
-                wins: increment(d.wins||0), losses: increment(d.losses||0), knockouts: increment(d.knockouts||0), 
+                wins: increment(d.wins||0), losses: increment(d.losses||0),
                 solRingOpening: increment(d.solRingOpening||0), firstBloodCount: increment(d.firstBloodCount||0),
                 mostRampCount: increment(d.mostRampCount||0), mostDrawCount: increment(d.mostDrawCount||0),
                 funRatingTotal: increment(d.funRatingTotal||0), funRatingCount: increment(d.funRatingCount||0),
@@ -1028,14 +1013,13 @@ function renderInsightTab() {
         const playerStats = playerDecks.reduce((acc, d) => ({
             games: acc.games + (d.wins || 0) + (d.losses || 0),
             wins: acc.wins + (d.wins || 0),
-            kos: acc.kos + (d.knockouts || 0),
             blood: acc.blood + (d.firstBloodCount || 0),
             ramp: acc.ramp + (d.mostRampCount || 0),
             draw: acc.draw + (d.mostDrawCount || 0),
             first: acc.first + (d.wentFirstCount || 0),
             last: acc.last + (d.wentLastCount || 0),
             impact: acc.impact + (d.impactCount || 0)
-        }), { games: 0, wins: 0, kos: 0, blood: 0, ramp: 0, draw: 0, first: 0, last: 0, impact: 0 });
+        }), { games: 0, wins: 0, blood: 0, ramp: 0, draw: 0, first: 0, last: 0, impact: 0 });
 
         const totalGames = playerStats.games || 0;
         const winRate = playerStats.games > 0 ? ((playerStats.wins / playerStats.games) * 100).toFixed(1) : 0;
@@ -1065,7 +1049,6 @@ function renderInsightTab() {
                 </div>
                 <div class="stat-badges" style="margin-top: 20px; background: rgba(0,0,0,0.3); padding: 15px; gap: 10px;">
                     <div class="stat-badge-pill pill-won">1ST PLACE <b>${playerStats.wins}</b></div>
-                    <div class="stat-badge-pill pill-kos">KILLS <b>${playerStats.kos}</b></div>
                     <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${playerStats.blood}</b></div>
                     <div class="stat-badge-pill pill-ramp">MOST RAMP <b>${playerStats.ramp}</b></div>
                     <div class="stat-badge-pill pill-draw">MOST DRAW <b>${playerStats.draw}</b></div>
@@ -1121,7 +1104,6 @@ function renderInsightTab() {
                                 <div class="stat-badges">
                                     <div class="stat-badge-pill pill-won">WINS <b>${deck.wins || 0}${calcPct(deck.wins)}</b></div>
                                     <div class="stat-badge-pill" style="background:rgba(255,255,255,0.1);">GAMES <b>${total}</b></div>
-                                    <div class="stat-badge-pill pill-kos">KILLS <b>${deck.knockouts || 0}</b></div>
                                     <div class="stat-badge-pill pill-blood">BLOOD <b>${deck.firstBloodCount || 0}${calcPct(deck.firstBloodCount)}</b></div>
                                     <div class="stat-badge-pill pill-ramp">RAMP <b>${deck.mostRampCount || 0}${calcPct(deck.mostRampCount)}</b></div>
                                     <div class="stat-badge-pill pill-draw">MOST DRAW <b>${deck.mostDrawCount || 0}${calcPct(deck.mostDrawCount)}</b></div>
