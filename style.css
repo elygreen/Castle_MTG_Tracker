@@ -18,8 +18,6 @@
     --clr-draw: #2196f3;
     --clr-first: #9c27b0;
     --clr-last: #795548;
-    --clr-fun: #e91e63;
-    --clr-impact: #ff9800;
     --clr-influence: #d10707;
     --clr-draw-alt: #607d8b;
 }
@@ -110,8 +108,6 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
 .pill-draw { background: var(--clr-draw); }
 .pill-first { background: var(--clr-first); }
 .pill-last { background: var(--clr-last); }
-.pill-fun { background: var(--clr-fun); }
-.pill-impact { background: var(--clr-impact); }
 .pill-influence { background: var(--clr-influence); color: #000; }
 
 /* Roster UI Enhancements */
@@ -335,8 +331,6 @@ button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700;
 .pill-first:has(input:checked) { background: var(--clr-first) !important; border-color: rgba(255,255,255,0.3); }
 .pill-last:has(input:checked) { background: var(--clr-last) !important; border-color: rgba(255,255,255,0.3); }
 .pill-sol:has(input:checked) { background: var(--clr-sol) !important; color: #000; border-color: rgba(0,0,0,0.2); }
-.pill-impact:has(input:checked) { background: var(--clr-impact) !important; border-color: rgba(255,255,255,0.3); }
-.pill-fun:has(input:checked) { background: var(--clr-fun) !important; border-color: rgba(255,255,255,0.3); }
 .pill-influence:has(input:checked) { 
     background: var(--clr-influence) !important; 
     color: #000; 

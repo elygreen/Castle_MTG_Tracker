@@ -251,8 +251,6 @@ function addParticipant(defaultPlayerName = null) {
 
         <div class="participant-row line-3">
             <label class="stat-pill pill-sol compact-pill"><input type="checkbox" class="p-sol" style="display:none"> Sol Ring</label>
-            <label class="stat-pill pill-impact compact-pill"><input type="checkbox" class="p-impact" style="display:none"> High Impact</label>
-            <label class="stat-pill pill-fun compact-pill"><input type="checkbox" class="p-fun" style="display:none"> Did its thing</label>
         </div>
     `;
     
@@ -381,8 +379,6 @@ onSnapshot(query(collection(db, "decks")), (snapshot) => {
                     <div class="stat-badge-pill pill-draw">MOST DRAW <b>${deck.mostDrawCount || 0}</b></div>
                     <div class="stat-badge-pill pill-first">WENT FIRST <b>${deck.wentFirstCount || 0}</b></div>
                     <div class="stat-badge-pill pill-last">WENT LAST <b>${deck.wentLastCount || 0}</b></div>
-                    <div class="stat-badge-pill pill-fun">DID ITS THING <b>${deck.funCount || 0}</b></div>
-                    <div class="stat-badge-pill pill-impact">HIGH IMPACT <b>${deck.impactCount || 0}</b></div>
                 </div>
             </div>
         `;
@@ -431,11 +427,8 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
                             ${p.blood ? `<div class="stat-badge-pill pill-blood">FIRST BLOOD</div>` : ''}
                             ${p.ramp ? `<div class="stat-badge-pill pill-ramp">MOST RAMP</div>` : ''}
                             ${p.draw ? `<div class="stat-badge-pill pill-draw">MOST DRAW</div>` : ''}
-                            ${p.fun ? `<div class="stat-badge-pill pill-fun">DID ITS THING</div>` : ''}
-                            ${p.impact ? `<div class="stat-badge-pill pill-impact">HIGH IMPACT</div>` : ''}
                             ${p.first ? `<div class="stat-badge-pill pill-first">1ST</div>` : ''}
                             ${p.last ? `<div class="stat-badge-pill pill-last">LAST</div>` : ''}
-                            ${p.impact ? `<div class="stat-badge-pill pill-impact">HIGH IMPACT</div>` : ''}
                         </div>
                     </div>
                 `).join('')}
@@ -502,7 +495,6 @@ document.getElementById('addPlayerBtn').onclick = async () => {
     await addDoc(collection(db, "decks"), {
         firstBloodCount: 0, mostRampCount: 0, 
         mostDrawCount: 0, solRingOpening: 0, wentFirstCount: 0, 
-        wentLastCount: 0, funCount: 0, impactCount: 0,
         funRatingTotal: 0, funRatingCount: 0, highestInfluenceCount: 0,
     });
     nameInput.value = '';
@@ -558,8 +550,6 @@ document.getElementById('addDeckBtn').onclick = async () => {
         mostDrawCount: 0,
         wentFirstCount: 0,
         wentLastCount: 0,
-        funCount: 0,
-        impactCount: 0,
         funRatingTotal: 0,
         funRatingCount: 0
     });
@@ -611,11 +601,9 @@ document.getElementById('submitMatchBtn').onclick = async () => {
             sol: row.querySelector('.p-sol').checked, 
             blood: row.querySelector('.p-blood').checked,
             ramp: row.querySelector('.p-ramp').checked, 
-            mostDraw: row.querySelector('.p-draw').checked, // Renamed to distinguish from Match Draw
+            mostDraw: row.querySelector('.p-draw').checked,
             first: row.querySelector('.p-first').checked, 
             last: row.querySelector('.p-last').checked,
-            fun: row.querySelector('.p-fun').checked, 
-            impact: row.querySelector('.p-impact').checked
         });
         
         // Update Lifetime Deck Stats
@@ -629,8 +617,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
             mostDrawCount: increment(row.querySelector('.p-draw').checked ? 1 : 0),
             wentFirstCount: increment(row.querySelector('.p-first').checked ? 1 : 0),
             wentLastCount: increment(row.querySelector('.p-last').checked ? 1 : 0),
-            funCount: increment(row.querySelector('.p-fun').checked ? 1 : 0),
-            impactCount: increment(row.querySelector('.p-impact').checked ? 1 : 0),
             highestInfluenceCount: increment(row.querySelector('.p-influence').checked ? 1 : 0),
         });
     });
@@ -724,7 +710,6 @@ async function finalizeDeckDeletion(id, playerName, merge) {
                 mostRampCount: increment(d.mostRampCount||0), mostDrawCount: increment(d.mostDrawCount||0),
                 funRatingTotal: increment(d.funRatingTotal||0), funRatingCount: increment(d.funRatingCount||0),
                 wentFirstCount: increment(d.wentFirstCount||0), wentLastCount: increment(d.wentLastCount||0),
-                funCount: increment(d.funCount||0), impactCount: increment(d.impactCount||0)
             });
         }
     }
@@ -926,8 +911,7 @@ function renderInsightTab() {
             draw: acc.draw + (d.mostDrawCount || 0),
             first: acc.first + (d.wentFirstCount || 0),
             last: acc.last + (d.wentLastCount || 0),
-            impact: acc.impact + (d.impactCount || 0)
-        }), { games: 0, blood: 0, ramp: 0, draw: 0, first: 0, last: 0, impact: 0 });
+        }), { games: 0, blood: 0, ramp: 0, draw: 0, first: 0, last: 0});
 
         const totalGames = playerStats.games || 0;
         const playerColor = getPlayerColor(selectedInsightPlayer);
@@ -946,7 +930,6 @@ function renderInsightTab() {
                     <div class="stat-badge-pill pill-draw">MOST DRAW <b>${playerStats.draw}</b></div>
                     <div class="stat-badge-pill pill-first">WENT FIRST <b>${playerStats.first}</b></div>
                     <div class="stat-badge-pill pill-last">WENT LAST <b>${playerStats.last}</b></div>
-                    <div class="stat-badge-pill pill-impact">HIGH IMPACT <b>${playerStats.impact}</b></div>
                 </div>
             </div>
 
@@ -987,7 +970,6 @@ function renderInsightTab() {
                                     <div class="stat-badge-pill pill-draw">MOST DRAW <b>${deck.mostDrawCount || 0}${calcPct(deck.mostDrawCount)}</b></div>
                                     <div class="stat-badge-pill pill-first">1ST <b>${deck.wentFirstCount || 0}${calcPct(deck.wentFirstCount)}</b></div>
                                     <div class="stat-badge-pill pill-last">LAST <b>${deck.wentLastCount || 0}${calcPct(deck.wentLastCount)}</b></div>
-                                    <div class="stat-badge-pill pill-impact">IMPACT <b>${deck.impactCount || 0}${calcPct(deck.impactCount)}</b></div>
                                 </div>
                             </div>`;
                     }).join('')}
