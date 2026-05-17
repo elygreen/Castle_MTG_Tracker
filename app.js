@@ -228,13 +228,18 @@ function addParticipant(defaultPlayerName = null) {
                     ${allPlayers.map(p => `<option value="${p.name}" style="color:${p.color}; font-weight:bold;">${p.name}</option>`).join('')}
                 </select>
                 <select class="p-deck"><option value="" disabled selected>Deck...</option></select>
-                <select class="p-fun-rating">
-                    <option value="0">N/A Fun</option>
-                    <option value="1">1/5</option>
-                    <option value="2">2/5</option>
-                    <option value="3">3/5</option>
-                    <option value="4">4/5</option>
-                    <option value="5">5/5</option>
+                <select class="p-deck-enjoyment">
+                    <option value="0">Deck Enjoyment</option>
+                    <option value="1">1/10</option>
+                    <option value="2">2/10</option>
+                    <option value="3">3/10</option>
+                    <option value="4">4/10</option>
+                    <option value="5">5/10</option>
+                    <option value="1">6/10</option>
+                    <option value="2">7/10</option>
+                    <option value="3">8/10</option>
+                    <option value="4">9/10</option>
+                    <option value="5">10/10</option>
                 </select>
             </div>
             <button class="remove-participant" onclick="this.parentElement.parentElement.remove()">✕</button>
@@ -419,7 +424,7 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
                             </div>
                         </div>
                         <div class="history-stats">
-                            ${p.funRating > 0 ? `<div class="stat-badge-pill pill-fun">★ <b>${p.funRating}</b></div>` : ''}
+                            ${p.funRating > 0 ? `<div class="stat-badge-pill pill-enjoyment">ENJOYMENT ★ <b>${p.funRating}</b></div>` : ''}
                             ${p.sol ? `<div class="stat-badge-pill pill-sol">SOL RING</div>` : ''}
                             ${p.blood ? `<div class="stat-badge-pill pill-blood">FIRST BLOOD</div>` : ''}
                             ${p.ramp ? `<div class="stat-badge-pill pill-ramp">MOST RAMP</div>` : ''}
@@ -584,8 +589,7 @@ document.getElementById('submitMatchBtn').onclick = async () => {
         const id = row.querySelector('.p-deck').value;
         const deckObj = allDecks.find(d => d.id === id);
         
-        // Key logic: Evaluate Win vs Draw for THIS specific row
-        const funRating = parseInt(row.querySelector('.p-fun-rating').value) || 0;
+        const funRating = parseInt(row.querySelector('.p-deck-enjoyment').value) || 0;
         
         // Object for Match History
         matchParticipants.push({
@@ -634,7 +638,7 @@ document.getElementById('submitMatchBtn').onclick = async () => {
         row.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
         row.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
         row.querySelector('.p-kills').value = "na";
-        row.querySelector('.p-fun-rating').value = "0";
+        row.querySelector('.p-deck-enjoyment').value = "0";
     });
 };
 
