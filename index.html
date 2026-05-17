@@ -28,7 +28,10 @@
         <div id="record" class="tab-content active">
             <!-- Add Match -->
             <section class="card">
-                <h2>New Match</h2>
+                <div class="new-match-header">
+                    <h2>New Match</h2>
+                    <button id="addParticipantBtn" class="btn-add-player" title="Add Player">＋ Add Player</button>
+                </div>
                 <div id="gameParticipants" class="participants-grid"></div>
                 
                 <div style="display: flex; gap: 15px; margin-top: 15px;">
@@ -79,8 +82,7 @@
 
                 <!-- Submit Buttons -->
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button id="addParticipantBtn" class="btn-blue" style="flex: 1; border: 1px solid var(--border);">+ Add Player</button>
-                    <button id="submitMatchBtn" style="background-color: var(--success); color: white; flex: 1.5;">Submit Results</button>
+                    <button id="submitMatchBtn" style="background-color: var(--success); color: white; flex: 1;">Submit Results</button>
                 </div>
             </section>
         </div>

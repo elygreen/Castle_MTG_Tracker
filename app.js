@@ -228,18 +228,18 @@ function addParticipant(defaultPlayerName = null) {
                     ${allPlayers.map(p => `<option value="${p.name}" style="color:${p.color}; font-weight:bold;">${p.name}</option>`).join('')}
                 </select>
                 <select class="p-deck"><option value="" disabled selected>Deck...</option></select>
-                <select class="p-deck-enjoyment">
+                <select class="p-deck-enjoyment enjoyment-select">
                     <option value="0">Deck Enjoyment</option>
-                    <option value="1">1/10</option>
-                    <option value="2">2/10</option>
-                    <option value="3">3/10</option>
-                    <option value="4">4/10</option>
-                    <option value="5">5/10</option>
-                    <option value="1">6/10</option>
-                    <option value="2">7/10</option>
-                    <option value="3">8/10</option>
-                    <option value="4">9/10</option>
-                    <option value="5">10/10</option>
+                    <option value="1">1 / 10</option>
+                    <option value="2">2 / 10</option>
+                    <option value="3">3 / 10</option>
+                    <option value="4">4 / 10</option>
+                    <option value="5">5 / 10</option>
+                    <option value="6">6 / 10</option>
+                    <option value="7">7 / 10</option>
+                    <option value="8">8 / 10</option>
+                    <option value="9">9 / 10</option>
+                    <option value="10">10 / 10</option>
                 </select>
             </div>
             <button class="remove-participant" onclick="this.parentElement.parentElement.remove()">✕</button>
