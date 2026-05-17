@@ -330,8 +330,63 @@ button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700;
 .pill-last:has(input:checked) { background: var(--clr-last) !important; border-color: rgba(255,255,255,0.3); }
 .pill-sol:has(input:checked) { background: var(--clr-sol) !important; color: #000; border-color: rgba(0,0,0,0.2); }
 
-.delete-btn-sm { background: var(--danger); color: white; font-size: 0.65rem; padding: 4px 10px; border-radius: 6px; }
-.edit-btn-sm { background: transparent; border: 1px solid var(--border); color: var(--text-dim); font-size: 0.6rem; padding: 2px 8px; border-radius: 4px; }
+/* Shared Match Awards Section */
+.shared-stats-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.shared-stat-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.shared-stat-label {
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    display: block;
+}
+
+.pill-first-label { background: var(--clr-first); color: white; }
+.pill-last-label  { background: var(--clr-last);  color: white; }
+.pill-blood-label  { background: var(--clr-blood);  color: white; }
+.pill-ramp-label   { background: var(--clr-ramp);   color: white; }
+.pill-draw-label   { background: var(--clr-draw);   color: white; }
+
+.shared-stat-select {
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #121416;
+    color: var(--text-dim);
+    margin-bottom: 0;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.first-select:focus { border-color: var(--clr-first); outline: none; }
+.last-select:focus  { border-color: var(--clr-last);  outline: none; }
+.blood-select:focus { border-color: var(--clr-blood); outline: none; }
+.ramp-select:focus  { border-color: var(--clr-ramp);  outline: none; }
+.draw-select:focus  { border-color: var(--clr-draw);  outline: none; }
+
+.blood-select:not([value=""]):not(:has(option[value=""]:checked)) { border-color: var(--clr-blood); }
+.ramp-select:not([value=""]):not(:has(option[value=""]:checked))  { border-color: var(--clr-ramp);  }
+.draw-select:not([value=""]):not(:has(option[value=""]:checked))  { border-color: var(--clr-draw);  }
+
+@media (max-width: 600px) {
+    .shared-stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+
 
 /* Initial hidden state to prevent flicker before JS auth check */
 body {

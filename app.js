@@ -246,14 +246,6 @@ function addParticipant(defaultPlayerName = null) {
         </div>
         
         <div class="participant-row line-2">
-            <label class="stat-pill pill-blood compact-pill"><input type="radio" name="blood_owner" class="p-blood" style="display:none"> Blood</label>
-            <label class="stat-pill pill-ramp compact-pill"><input type="radio" name="ramp_owner" class="p-ramp" style="display:none"> Ramp</label>
-            <label class="stat-pill pill-draw compact-pill"><input type="radio" name="draw_owner" class="p-draw" style="display:none"> Draw</label>
-            <label class="stat-pill pill-first compact-pill"><input type="radio" name="first_owner" class="p-first" style="display:none"> 1st</label>
-            <label class="stat-pill pill-last compact-pill"><input type="radio" name="last_owner" class="p-last" style="display:none"> Last</label>
-        </div>
-
-        <div class="participant-row line-3">
             <label class="stat-pill pill-sol compact-pill"><input type="checkbox" class="p-sol" style="display:none"> Sol Ring</label>
         </div>
     `;
@@ -273,7 +265,14 @@ function addParticipant(defaultPlayerName = null) {
         filtered.sort((a,b) => a.deckName === 'Misc' ? 1 : b.deckName === 'Misc' ? -1 : a.deckName.localeCompare(b.deckName));
         deckSel.innerHTML = '<option value="" disabled selected>Deck...</option>' + 
             filtered.map(d => `<option value="${d.id}">${d.deckName}</option>`).join('');
+
+        refreshSharedStatDropdowns();
     };
+
+    // Also refresh on remove
+    row.querySelector('.remove-participant').addEventListener('click', () => {
+        setTimeout(refreshSharedStatDropdowns, 0);
+    });
 
     document.getElementById('gameParticipants').appendChild(row);
 
@@ -281,6 +280,35 @@ function addParticipant(defaultPlayerName = null) {
         ownerSel.value = defaultPlayerName;
         ownerSel.dispatchEvent(new Event('change'));
     }
+}
+
+// --- SHARED STAT DROPDOWNS ---
+function refreshSharedStatDropdowns() {
+    const rows = document.querySelectorAll('#gameParticipants .card');
+    const players = [];
+    rows.forEach(row => {
+        const name = row.querySelector('.p-owner').value;
+        if (name) players.push(name);
+    });
+
+    const makeOptions = (label) => 
+        `<option value="">${label}</option>` +
+        players.map(p => {
+            const color = getPlayerColor(p);
+            return `<option value="${p}" style="color:${color}; font-weight:bold;">${p}</option>`;
+        }).join('');
+
+    const bloodSel = document.getElementById('shared-blood');
+    const rampSel  = document.getElementById('shared-ramp');
+    const drawSel  = document.getElementById('shared-draw');
+    const firstSel = document.getElementById('shared-first');
+    const lastSel  = document.getElementById('shared-last');
+
+    if (firstSel) firstSel.innerHTML = makeOptions('Select a user...');
+    if (lastSel)  lastSel.innerHTML  = makeOptions('Select a user...');
+    if (bloodSel) bloodSel.innerHTML = makeOptions('Select a user...');
+    if (rampSel)  rampSel.innerHTML  = makeOptions('Select a user...');
+    if (drawSel)  drawSel.innerHTML  = makeOptions('Select a user...');
 }
 
 // --- 1. LISTENERS ---
@@ -559,7 +587,27 @@ document.getElementById('addDeckBtn').onclick = async () => {
     alert(`Deck Saved with Commander: ${commanderData.name}`);
 };
 
-document.getElementById('addParticipantBtn').onclick = () => addParticipant();
+document.getElementById('addParticipantBtn').onclick = () => {
+    addParticipant();
+    refreshSharedStatDropdowns();
+};
+
+// Highlight shared stat selects when a player is chosen
+['shared-first', 'shared-last', 'shared-blood', 'shared-ramp', 'shared-draw'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.addEventListener('change', () => {
+        const colorMap = { 
+            'shared-first': 'var(--clr-first)', 
+            'shared-last':  'var(--clr-last)',
+            'shared-blood': 'var(--clr-blood)', 
+            'shared-ramp':  'var(--clr-ramp)', 
+            'shared-draw':  'var(--clr-draw)' 
+        };
+        sel.style.borderColor = sel.value ? colorMap[id] : 'var(--border)';
+        sel.style.color = sel.value ? 'white' : 'var(--text-dim)';
+    });
+});
 
 document.getElementById('submitMatchBtn').onclick = async () => {
     const rows = document.querySelectorAll('#gameParticipants .card');
@@ -575,6 +623,11 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     }
 
     const matchComment = document.getElementById('matchComment').value.trim();
+    const firstWinner = document.getElementById('shared-first')?.value || '';
+    const lastWinner  = document.getElementById('shared-last')?.value  || '';
+    const bloodWinner = document.getElementById('shared-blood')?.value || '';
+    const rampWinner  = document.getElementById('shared-ramp')?.value  || '';
+    const drawWinner  = document.getElementById('shared-draw')?.value  || '';
     const batch = writeBatch(db);
     const matchParticipants = [];
 
@@ -582,22 +635,28 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     rows.forEach(row => {
         const id = row.querySelector('.p-deck').value;
         const deckObj = allDecks.find(d => d.id === id);
+        const playerName = deckObj.player;
         
         const funRating = parseInt(row.querySelector('.p-deck-enjoyment').value) || 0;
+        const isFirst = firstWinner === playerName;
+        const isLast  = lastWinner  === playerName;
+        const isBlood = bloodWinner === playerName;
+        const isRamp  = rampWinner  === playerName;
+        const isDraw  = drawWinner  === playerName;
         
         // Object for Match History
         matchParticipants.push({
             deckId: id, 
-            player: deckObj.player, 
+            player: playerName, 
             deckName: deckObj.deckName, 
             deckTags: deckObj.deckTags || [], 
             funRating: funRating,
             sol: row.querySelector('.p-sol').checked, 
-            blood: row.querySelector('.p-blood').checked,
-            ramp: row.querySelector('.p-ramp').checked, 
-            mostDraw: row.querySelector('.p-draw').checked,
-            first: row.querySelector('.p-first').checked, 
-            last: row.querySelector('.p-last').checked,
+            blood: isBlood,
+            ramp: isRamp, 
+            draw: isDraw,
+            first: isFirst, 
+            last: isLast,
         });
         
         // Update Lifetime Deck Stats
@@ -606,11 +665,11 @@ document.getElementById('submitMatchBtn').onclick = async () => {
             funRatingTotal: increment(funRating),
             funRatingCount: increment(funRating > 0 ? 1 : 0),
             solRingOpening: increment(row.querySelector('.p-sol').checked ? 1 : 0),
-            firstBloodCount: increment(row.querySelector('.p-blood').checked ? 1 : 0),
-            mostRampCount: increment(row.querySelector('.p-ramp').checked ? 1 : 0),
-            mostDrawCount: increment(row.querySelector('.p-draw').checked ? 1 : 0),
-            wentFirstCount: increment(row.querySelector('.p-first').checked ? 1 : 0),
-            wentLastCount: increment(row.querySelector('.p-last').checked ? 1 : 0),
+            firstBloodCount: increment(isBlood ? 1 : 0),
+            mostRampCount: increment(isRamp ? 1 : 0),
+            mostDrawCount: increment(isDraw ? 1 : 0),
+            wentFirstCount: increment(isFirst ? 1 : 0),
+            wentLastCount: increment(isLast ? 1 : 0),
         });
     });
     
@@ -626,10 +685,19 @@ document.getElementById('submitMatchBtn').onclick = async () => {
 
     // 5. UI Reset
     document.getElementById('matchComment').value = '';
+    const sharedFirst = document.getElementById('shared-first');
+    const sharedLast  = document.getElementById('shared-last');
+    const sharedBlood = document.getElementById('shared-blood');
+    const sharedRamp  = document.getElementById('shared-ramp');
+    const sharedDraw  = document.getElementById('shared-draw');
+    if (sharedFirst) sharedFirst.selectedIndex = 0;
+    if (sharedLast)  sharedLast.selectedIndex  = 0;
+    if (sharedBlood) sharedBlood.selectedIndex = 0;
+    if (sharedRamp)  sharedRamp.selectedIndex  = 0;
+    if (sharedDraw)  sharedDraw.selectedIndex  = 0;
     rows.forEach(row => {
         row.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
         row.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-        row.querySelector('.p-kills').value = "na";
         row.querySelector('.p-deck-enjoyment').value = "0";
     });
 };
