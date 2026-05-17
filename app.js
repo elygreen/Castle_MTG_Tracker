@@ -405,11 +405,6 @@ onSnapshot(query(collection(db, "matches"), orderBy("timestamp", "desc"), limit(
             <div class="history-header">
                 <div class="history-date">${dateStr}</div>
                 <div style="display:flex; gap:10px; align-items:center;">
-                    ${match.saltScore && match.saltScore !== 'N/A' ? `
-                        <div class="stat-badge-pill" style="background: var(--mtg-orange); font-size: 0.6rem;">
-                            SALT: ${match.saltScore}
-                        </div>` : ''}
-                    
                     <div class="history-date">${match.participants.length} Players</div>
                 </div>
             </div>
@@ -579,7 +574,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
         } 
     }
 
-    const saltScore = document.getElementById('matchSaltScore').value;
     const matchComment = document.getElementById('matchComment').value.trim();
     const batch = writeBatch(db);
     const matchParticipants = [];
@@ -625,7 +619,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
     await addDoc(collection(db, "matches"), { 
         timestamp: serverTimestamp(), 
         participants: matchParticipants,
-        saltScore: saltScore,
         comment: matchComment 
     });
     
@@ -633,7 +626,6 @@ document.getElementById('submitMatchBtn').onclick = async () => {
 
     // 5. UI Reset
     document.getElementById('matchComment').value = '';
-    document.getElementById('matchSaltScore').value = 'N/A';
     rows.forEach(row => {
         row.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
         row.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
