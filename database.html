@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Castle MTG — Database</title>
+    <link rel="icon" type="image/x-icon" href="castleicon.ico">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="database">
+    <div class="container" style="max-width: 950px;">
+        <header>
+            <h1>Castle MTG Stat Tracker</h1>
+        </header>
+
+        <nav class="tab-nav">
+            <a class="tab-btn" href="record.html">Record Match</a>
+            <a class="tab-btn" href="history.html">History</a>
+            <a class="tab-btn" href="standings.html">Standings</a>
+            <a class="tab-btn" href="insight.html">Player Insight</a>
+            <a class="tab-btn" href="database.html">Database</a>
+        </nav>
+
+        <div class="manage-grid">
+            <div class="manage-col">
+                <section class="card">
+                    <h2>Add Player</h2>
+                    <div class="input-group" style="flex-direction: column; gap: 15px;">
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="newPlayerName" placeholder="Name (e.g. Ely)" style="margin:0;">
+                            <button id="addPlayerBtn" class="btn-blue" style="flex: none;">Register</button>
+                        </div>
+                        <div id="newPlayerColorGrid" class="modern-color-grid"></div>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <h2>Add Deck</h2>
+                    <div class="input-group" style="flex-direction: column;">
+                        <select id="playerSelect"><option value="" disabled selected>Owner...</option></select>
+                        <input type="text" id="deckName" placeholder="Deck Title" style="margin-bottom: 10px;">
+                        <input type="text" id="commanderName" placeholder="Commander Name (e.g. Attrax)" style="margin-bottom: 10px;">
+                        <select id="deckBracket" style="margin-bottom: 10px;">
+                            <option value="" disabled selected>Power Bracket...</option>
+                            <option value="1">1</option>
+                            <option value="1.5">1+</option>
+                            <option value="2">2</option>
+                            <option value="2.5">2+</option>
+                            <option value="3">3</option>
+                            <option value="3.5">3+</option>
+                            <option value="4">4</option>
+                            <option value="4.5">4+</option>
+                            <option value="5">cEDH</option>
+                        </select>
+                        <button id="toggleTagsBtn" type="button" class="btn-blue">+ Add Tags</button>
+                        <div id="tagSelectorContainer" class="tag-selector-hidden">
+                            <div id="tagSelector" class="tag-selector-grid">
+                                <label class="tag-checkbox"><span>Aggro</span><input type="checkbox" value="Aggro"></label>
+                                <label class="tag-checkbox"><span>Aristocrats</span><input type="checkbox" value="Aristocrats"></label>
+                                <label class="tag-checkbox"><span>Artifacts</span><input type="checkbox" value="Artifacts"></label>
+                                <label class="tag-checkbox"><span>Big Mana</span><input type="checkbox" value="Big Mana"></label>
+                                <label class="tag-checkbox"><span>Blink</span><input type="checkbox" value="Blink"></label>
+                                <label class="tag-checkbox"><span>Burn</span><input type="checkbox" value="Burn"></label>
+                                <label class="tag-checkbox"><span>Combo</span><input type="checkbox" value="Combo"></label>
+                                <label class="tag-checkbox"><span>Control</span><input type="checkbox" value="Control"></label>
+                                <label class="tag-checkbox"><span>Group Hug</span><input type="checkbox" value="Group Hug"></label>
+                                <label class="tag-checkbox"><span>Lands</span><input type="checkbox" value="Lands"></label>
+                                <label class="tag-checkbox"><span>Lifegain</span><input type="checkbox" value="Lifegain"></label>
+                                <label class="tag-checkbox"><span>Midrange</span><input type="checkbox" value="Midrange"></label>
+                                <label class="tag-checkbox"><span>Mill</span><input type="checkbox" value="Mill"></label>
+                                <label class="tag-checkbox"><span>Reanimator</span><input type="checkbox" value="Reanimator"></label>
+                                <label class="tag-checkbox"><span>Spellslinger</span><input type="checkbox" value="Spellslinger"></label>
+                                <label class="tag-checkbox"><span>Stax</span><input type="checkbox" value="Stax"></label>
+                                <label class="tag-checkbox"><span>Tokens</span><input type="checkbox" value="Tokens"></label>
+                                <label class="tag-checkbox"><span>Tribal</span><input type="checkbox" value="Tribal"></label>
+                                <label class="tag-checkbox"><span>Voltron</span><input type="checkbox" value="Voltron"></label>
+                                <label class="tag-checkbox"><span>+1/+1 Counters</span><input type="checkbox" value="+1/+1 Counters"></label>
+                                <label class="tag-checkbox"><span>Mono Color</span><input type="checkbox" value="Mono Color"></label>
+                                <label class="tag-checkbox"><span>Budget</span><input type="checkbox" value="Budget"></label>
+                                <label class="tag-checkbox"><span>Recursion</span><input type="checkbox" value="Recursion"></label>
+                                <label class="tag-checkbox"><span>Go Wide</span><input type="checkbox" value="Go Wide"></label>
+                                <label class="tag-checkbox"><span>Goad</span><input type="checkbox" value="Goad"></label>
+                                <label class="tag-checkbox"><span>Graveyard</span><input type="checkbox" value="Graveyard"></label>
+                                <label class="tag-checkbox"><span>Enchantress</span><input type="checkbox" value="Enchantress"></label>
+                                <label class="tag-checkbox"><span>Storm</span><input type="checkbox" value="Storm"></label>
+                                <label class="tag-checkbox"><span>Theft</span><input type="checkbox" value="Theft"></label>
+                            </div>
+                        </div>
+                        <button id="addDeckBtn" class="btn-green" style="margin-top: 15px;">Save Deck</button>
+                    </div>
+                </section>
+            </div>
+
+            <div class="manage-col">
+                <section class="card roster-card">
+                    <h2>Player Roster</h2>
+                    <div id="rosterTabs" class="roster-tabs"></div>
+                    <div id="rosterDeckList" class="roster-deck-view">
+                        <p style="color: var(--text-dim); font-size: 0.8rem; text-align: center;">Select a player to view their decks.</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div id="customModal" class="modal-overlay">
+            <div class="modal-card">
+                <h3 id="modalTitle">Modal Title</h3>
+                <div id="modalBody">Modal Body</div>
+                <div id="modalActions" class="modal-actions"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="database_page.js"></script>
+</body>
+</html>

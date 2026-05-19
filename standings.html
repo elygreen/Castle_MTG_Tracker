@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Castle MTG — Standings</title>
+    <link rel="icon" type="image/x-icon" href="castleicon.ico">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="standings">
+    <div class="container" style="max-width: 950px;">
+        <header>
+            <h1>Castle MTG Stat Tracker</h1>
+        </header>
+
+        <nav class="tab-nav">
+            <a class="tab-btn" href="record.html">Record Match</a>
+            <a class="tab-btn" href="history.html">History</a>
+            <a class="tab-btn" href="standings.html">Standings</a>
+            <a class="tab-btn" href="insight.html">Player Insight</a>
+            <a class="tab-btn" href="database.html">Database</a>
+        </nav>
+
+        <section>
+            <h2>Leaderboard</h2>
+            <div id="loading">Syncing with multiverses...</div>
+            <ul id="deckList" style="list-style: none; padding: 0;"></ul>
+        </section>
+    </div>
+
+    <script type="module" src="standings_page.js"></script>
+</body>
+</html>

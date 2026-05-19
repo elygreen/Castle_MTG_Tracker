@@ -65,20 +65,26 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
     window.handleEditDeckSettingsTrigger = (deckId) => handleEditDeckSettingsTrigger(deckId);
     window.handleDeckDeletionTrigger     = (id, deckName, playerName) => handleDeckDeletionTrigger(id, deckName, playerName);
 
-    // Colour grid for the "Add Player" form
-    _renderColorGrid('newPlayerColorGrid', selectedNewPlayerColor, (color) => {
-        selectedNewPlayerColor = color;
-    });
+    // Colour grid for the "Add Player" form (database.html only)
+    if (document.getElementById('newPlayerColorGrid')) {
+        _renderColorGrid('newPlayerColorGrid', selectedNewPlayerColor, (color) => {
+            selectedNewPlayerColor = color;
+        });
+    }
 
-    // Tag selector toggle
+    // Tag selector toggle (database.html only)
     const tagContainer = document.getElementById('tagSelectorContainer');
-    document.getElementById('toggleTagsBtn').onclick = () => {
-        tagContainer.classList.toggle('tag-selector-hidden');
-        tagContainer.classList.toggle('tag-selector-visible');
-    };
+    const toggleTagsBtn = document.getElementById('toggleTagsBtn');
+    if (tagContainer && toggleTagsBtn) {
+        toggleTagsBtn.onclick = () => {
+            tagContainer.classList.toggle('tag-selector-hidden');
+            tagContainer.classList.toggle('tag-selector-visible');
+        };
+    }
 
-    // Add Player button
-    document.getElementById('addPlayerBtn').onclick = async () => {
+    // Add Player button (database.html only)
+    const addPlayerBtn = document.getElementById('addPlayerBtn');
+    if (addPlayerBtn) addPlayerBtn.onclick = async () => {
         const nameInput = document.getElementById('newPlayerName');
         const name = nameInput.value.trim();
         if (!name || _getAllPlayers().some(p => p.name === name)) return;
@@ -91,8 +97,9 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
         nameInput.value = '';
     };
 
-    // Add Deck button
-    document.getElementById('addDeckBtn').onclick = async () => {
+    // Add Deck button (database.html only)
+    const addDeckBtn = document.getElementById('addDeckBtn');
+    if (addDeckBtn) addDeckBtn.onclick = async () => {
         const player    = document.getElementById('playerSelect').value;
         const deckName  = document.getElementById('deckName').value.trim();
         const cmdInput  = document.getElementById('commanderName').value.trim();

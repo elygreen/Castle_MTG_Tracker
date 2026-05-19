@@ -45,8 +45,18 @@ body {
 header h1 { font-size: 1.5rem; font-weight: 800; text-align: center; margin-bottom: 20px; }
 
 .tab-nav { display: flex; gap: 8px; margin-bottom: 20px; background: var(--surface); padding: 5px; border-radius: var(--radius); }
-.tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; background: transparent; color: var(--text-dim); font-weight: 600; cursor: pointer; }
-.tab-btn.active { background: var(--accent); color: white; }
+.tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; background: transparent; color: var(--text-dim); font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; display: block; }
+.tab-btn:hover { color: var(--text-main); }
+
+/* Active nav link — driven by data-page on <body> */
+body[data-page="record"]    .tab-btn[href="record.html"],
+body[data-page="history"]   .tab-btn[href="history.html"],
+body[data-page="standings"] .tab-btn[href="standings.html"],
+body[data-page="insight"]   .tab-btn[href="insight.html"],
+body[data-page="database"]  .tab-btn[href="database.html"] {
+    background: var(--accent);
+    color: white;
+}
 
 .card { background: var(--surface); padding: 15px; border-radius: var(--radius); margin-bottom: 15px; border: 1px solid var(--border); box-shadow: var(--shadow); }
 h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px; letter-spacing: 1px; }
@@ -175,8 +185,11 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
 .history-deck-name { font-size: 0.9rem; font-weight: 700; }
 .history-stats { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: flex-end; max-width: 250px; }
 
-.tab-content { display: none; }
-.tab-content.active { display: block; }
+/* role-user hides restricted nav links */
+body.role-user .tab-btn[href="history.html"],
+body.role-user .tab-btn[href="standings.html"],
+body.role-user .tab-btn[href="insight.html"],
+body.role-user .tab-btn[href="database.html"] { display: none; }
 
 .input-group { display: flex; gap: 10px; }
 input, select { background: #121416; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px; flex: 1; font-size: 13px; margin-bottom: 5px; }
@@ -614,14 +627,6 @@ textarea:focus {
     color: white;
 }
 
-body.role-user .edit-btn-sm, 
+body.role-user .edit-btn-sm,
 body.role-user .player-controls,
-body.role-user #addParticipantBtn {
-    display: none !important;
-}
-
-/* Ensure the navigation bar looks clean with fewer buttons */
-body.role-user .edit-btn-sm, 
-body.role-user .player-controls {
-    display: none !important;
-}
+body.role-user #addParticipantBtn { display: none !important; }

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Castle MTG — Record Match</title>
+    <link rel="icon" type="image/x-icon" href="castleicon.ico">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="record">
+    <div class="container" style="max-width: 950px;">
+        <header>
+            <h1>Castle MTG Stat Tracker</h1>
+        </header>
+
+        <nav class="tab-nav">
+            <a class="tab-btn" href="record.html">Record Match</a>
+            <a class="tab-btn" href="history.html">History</a>
+            <a class="tab-btn" href="standings.html">Standings</a>
+            <a class="tab-btn" href="insight.html">Player Insight</a>
+            <a class="tab-btn" href="database.html">Database</a>
+        </nav>
+
+        <section class="card">
+            <div class="new-match-header">
+                <h2>New Match</h2>
+                <button id="addParticipantBtn" class="btn-add-player" title="Add Player">＋ Add Player</button>
+            </div>
+            <div id="gameParticipants" class="participants-grid"></div>
+
+            <div style="margin-top: 15px;">
+                <label style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">Match Awards</label>
+                <div class="shared-stats-row">
+                    <div class="shared-stat-group">
+                        <label class="shared-stat-label pill-first-label">Went First</label>
+                        <select id="shared-first" class="shared-stat-select first-select"><option value="">Select a user...</option></select>
+                    </div>
+                    <div class="shared-stat-group">
+                        <label class="shared-stat-label pill-last-label">Went Last</label>
+                        <select id="shared-last" class="shared-stat-select last-select"><option value="">Select a user...</option></select>
+                    </div>
+                    <div class="shared-stat-group">
+                        <label class="shared-stat-label pill-blood-label">First Blood</label>
+                        <select id="shared-blood" class="shared-stat-select blood-select"><option value="">Select a user...</option></select>
+                    </div>
+                    <div class="shared-stat-group">
+                        <label class="shared-stat-label pill-ramp-label">Most Ramp</label>
+                        <select id="shared-ramp" class="shared-stat-select ramp-select"><option value="">Select a user...</option></select>
+                    </div>
+                    <div class="shared-stat-group">
+                        <label class="shared-stat-label pill-draw-label">Most Card Draw</label>
+                        <select id="shared-draw" class="shared-stat-select draw-select"><option value="">Select a user...</option></select>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 15px;">
+                <label style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 5px;">Match Comments</label>
+                <textarea id="matchComment" placeholder="Anything note worthy?" style="width: 100%; min-height: 80px; box-sizing: border-box;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button id="submitMatchBtn" style="background-color: var(--success); color: white; flex: 1;">Submit Results</button>
+            </div>
+        </section>
+    </div>
+
+    <script type="module" src="record.js"></script>
+</body>
+</html>
