@@ -21,6 +21,10 @@
     --clr-draw-alt: #607d8b;
 }
 
+html {
+    scrollbar-gutter: stable;
+}
+
 body { 
     font-family: 'Inter', -apple-system, sans-serif; 
     background-color: var(--bg); color: var(--text-main); 
@@ -45,8 +49,9 @@ body {
 header h1 { font-size: 1.5rem; font-weight: 800; text-align: center; margin-bottom: 20px; }
 
 .tab-nav { display: flex; gap: 8px; margin-bottom: 20px; background: var(--surface); padding: 5px; border-radius: var(--radius); }
-.tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; background: transparent; color: var(--text-dim); font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; display: block; }
-.tab-btn:hover { color: var(--text-main); }
+.tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; background: transparent; color: var(--text-dim); font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; display: block; transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease; }
+.tab-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.06); transform: translateY(-1px); }
+.tab-btn:active { transform: translateY(0); }
 
 /* Active nav link — driven by data-page on <body> */
 body[data-page="record"]    .tab-btn[href="record.html"],
@@ -72,7 +77,7 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
     box-shadow: var(--shadow);
     transition: transform 0.2s ease, border-color 0.2s ease;
 }
-.deck-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.deck-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(61,133,255,0.15); }
 
 .deck-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; }
 
@@ -125,6 +130,11 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 12px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.roster-deck-item:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.12);
 }
 .roster-deck-content { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .roster-deck-info { flex: 1; }
@@ -141,9 +151,18 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
     padding: 10px 14px; 
     border-radius: 8px; 
     cursor: pointer; 
-    transition: all 0.2s; 
+    transition: all 0.2s ease; 
     font-weight: 800;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+}
+.roster-tab-btn:hover {
+    transform: translateX(4px);
+    filter: brightness(1.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.roster-tab-btn:active {
+    transform: translateX(2px);
+    filter: brightness(0.95);
 }
 
 .roster-tab-btn.active { 
@@ -152,9 +171,12 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
 }
 
 .player-controls { display: flex; gap: 4px; }
-.player-del-btn { background: none; color: var(--danger); padding: 5px; font-size: 12px; cursor: pointer; }
-.player-edit-btn { background: none; padding: 5px; font-size: 12px; cursor: pointer; opacity: 0.6; }
-.player-edit-btn:hover { opacity: 1; }
+.player-del-btn { background: none; color: var(--danger); padding: 5px; font-size: 12px; cursor: pointer; border-radius: 4px; transition: background 0.15s ease, transform 0.15s ease; }
+.player-del-btn:hover { background: rgba(211,47,47,0.15); transform: scale(1.15); }
+.player-del-btn:active { transform: scale(0.95); }
+.player-edit-btn { background: none; padding: 5px; font-size: 12px; cursor: pointer; opacity: 0.6; border-radius: 4px; transition: opacity 0.15s ease, background 0.15s ease, transform 0.15s ease; }
+.player-edit-btn:hover { opacity: 1; background: rgba(255,255,255,0.08); transform: scale(1.15); }
+.player-edit-btn:active { transform: scale(0.95); }
 
 /* Manage/History Helper Styles */
 .manage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
@@ -192,7 +214,9 @@ body.role-user .tab-btn[href="insight.html"],
 body.role-user .tab-btn[href="database.html"] { display: none; }
 
 .input-group { display: flex; gap: 10px; }
-input, select { background: #121416; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px; flex: 1; font-size: 13px; margin-bottom: 5px; }
+input, select { background: #121416; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px; flex: 1; font-size: 13px; margin-bottom: 5px; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+input:hover, select:hover { border-color: rgba(255,255,255,0.2); }
+input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(61,133,255,0.15); }
 
 /* Curated Color Grid UI */
 .modern-color-grid {
@@ -224,9 +248,13 @@ input, select { background: #121416; border: 1px solid var(--border); color: whi
     box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
 }
 
-button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; }
+button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: filter 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease; }
+button:hover { filter: brightness(1.15); transform: translateY(-1px); }
+button:active { filter: brightness(0.9); transform: translateY(0); box-shadow: none; }
 .btn-blue { background: var(--accent); color: white; font-size: 0.8rem; }
+.btn-blue:hover { box-shadow: 0 4px 14px rgba(61,133,255,0.4); }
 .btn-green { background: var(--success); color: white; }
+.btn-green:hover { box-shadow: 0 4px 14px rgba(46,125,50,0.4); }
 
 .tag-selector-grid { 
     display: grid; 
@@ -250,9 +278,13 @@ button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700;
     padding: 8px 12px;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 6px;
-    transition: all 0.2s ease;
+    transition: background 0.15s ease, color 0.15s ease;
     width: 100%;
     box-sizing: border-box;
+}
+.tag-checkbox:hover {
+    background: rgba(255,255,255,0.08);
+    color: var(--text-main);
 }
 .tag-checkbox span {
     flex: 1;
@@ -293,17 +325,17 @@ button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700;
     letter-spacing: 0.5px;
     text-transform: uppercase;
     cursor: pointer;
-    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
-
 .btn-add-player:hover {
     background: rgba(61, 133, 255, 0.25);
     border-color: var(--accent);
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(61,133,255,0.25);
 }
-
 .btn-add-player:active {
     transform: translateY(0);
+    box-shadow: none;
 }
 
 
@@ -350,6 +382,15 @@ button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700;
     cursor: pointer;
     font-size: 1.1rem;
     padding: 0 4px;
+    border-radius: 4px;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+.remove-participant:hover {
+    background: rgba(211,47,47,0.15);
+    transform: scale(1.2);
+}
+.remove-participant:active {
+    transform: scale(0.95);
 }
 
 /* Match Adder Stat Pills - Default Gray */
@@ -366,7 +407,16 @@ button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700;
     color: white; 
     text-transform: uppercase;
     background: #2a2d31; 
-    transition: background 0.2s ease, border-color 0.2s ease;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.stat-pill:hover {
+    filter: brightness(1.2);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+}
+.stat-pill:active {
+    transform: translateY(0);
+    box-shadow: none;
 }
 
 .stat-pill.compact-pill { 
@@ -422,7 +472,11 @@ button { padding: 10px 12px; border-radius: 8px; border: none; font-weight: 700;
     color: var(--text-dim);
     margin-bottom: 0;
     cursor: pointer;
-    transition: border-color 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+.shared-stat-select:hover {
+    border-color: rgba(255,255,255,0.2);
+    color: var(--text-main);
 }
 
 .first-select:focus { border-color: var(--clr-first); outline: none; }
@@ -458,12 +512,16 @@ textarea {
     padding: 10px;
     border-radius: 8px;
     font-size: 13px;
-    resize: vertical; /* Allows users to expand the box if they write a novel */
+    resize: vertical;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-
+textarea:hover {
+    border-color: rgba(255,255,255,0.2);
+}
 textarea:focus {
     outline: none;
     border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(61,133,255,0.15);
 }
 
 /* Refined History Comment Box */
@@ -630,3 +688,56 @@ textarea:focus {
 body.role-user .edit-btn-sm,
 body.role-user .player-controls,
 body.role-user #addParticipantBtn { display: none !important; }
+
+/* Submit match button — extra emphasis */
+#submitMatchBtn {
+    background-color: var(--success);
+    color: white;
+    flex: 1;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    transition: filter 0.15s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+#submitMatchBtn:hover {
+    filter: brightness(1.2);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(46,125,50,0.5);
+}
+#submitMatchBtn:active {
+    transform: translateY(0);
+    box-shadow: none;
+    filter: brightness(0.95);
+}
+
+/* Participant card hover */
+.participant-card-compact {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.participant-card-compact:hover {
+    border-color: rgba(255,255,255,0.1);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+/* History card hover */
+.history-card {
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.history-card:hover {
+    border-color: rgba(255,255,255,0.1);
+    transform: translateY(-1px);
+}
+
+/* Color swatch scale on hover already exists, bump it slightly */
+.color-swatch:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 6px rgba(255,255,255,0.3);
+}
+
+/* Modal action buttons */
+.modal-actions button:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+}
+.modal-actions button:active {
+    transform: translateY(0);
+}

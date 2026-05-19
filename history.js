@@ -50,12 +50,13 @@ export function buildHistoryCard(match, matchId, getPlayerColor, getTagStyle) {
                     </div>
                     <div class="history-stats">
                         ${p.funRating > 0  ? `<div class="stat-badge-pill pill-enjoyment">ENJOYMENT ★ <b>${p.funRating}</b></div>` : ''}
-                        ${p.sol            ? `<div class="stat-badge-pill pill-sol">SOL RING</div>`    : ''}
-                        ${p.blood          ? `<div class="stat-badge-pill pill-blood">FIRST BLOOD</div>` : ''}
-                        ${p.ramp           ? `<div class="stat-badge-pill pill-ramp">MOST RAMP</div>`  : ''}
-                        ${p.draw           ? `<div class="stat-badge-pill pill-draw">MOST DRAW</div>`  : ''}
-                        ${p.first          ? `<div class="stat-badge-pill pill-first">1ST</div>`       : ''}
-                        ${p.last           ? `<div class="stat-badge-pill pill-last">LAST</div>`       : ''}
+                        ${p.sol            ? `<div class="stat-badge-pill pill-sol">SOL RING</div>`       : ''}
+                        ${p.mulligan       ? `<div class="stat-badge-pill pill-mulligan">2+ MULLIGANS</div>` : ''}
+                        ${p.blood          ? `<div class="stat-badge-pill pill-blood">FIRST BLOOD</div>`  : ''}
+                        ${p.ramp           ? `<div class="stat-badge-pill pill-ramp">MOST RAMP</div>`     : ''}
+                        ${p.draw           ? `<div class="stat-badge-pill pill-draw">MOST DRAW</div>`     : ''}
+                        ${p.first          ? `<div class="stat-badge-pill pill-first">1ST</div>`          : ''}
+                        ${p.last           ? `<div class="stat-badge-pill pill-last">LAST</div>`          : ''}
                     </div>
                 </div>
             `).join('')}

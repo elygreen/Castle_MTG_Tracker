@@ -123,6 +123,7 @@ function addParticipant(defaultPlayerName = null) {
         </div>
         <div class="participant-row line-2">
             <label class="stat-pill pill-sol compact-pill"><input type="checkbox" class="p-sol" style="display:none"> Sol Ring</label>
+            <label class="stat-pill pill-mulligan compact-pill"><input type="checkbox" class="p-mulligan" style="display:none"> 2+ Mulligans</label>
         </div>
     `;
 
@@ -232,7 +233,8 @@ async function submitMatch() {
             deckName: deckObj.deckName,
             deckTags: deckObj.deckTags || [],
             funRating,
-            sol:   row.querySelector('.p-sol').checked,
+            sol:      row.querySelector('.p-sol').checked,
+            mulligan: row.querySelector('.p-mulligan').checked,
             blood: isBlood, ramp: isRamp, draw: isDraw,
             first: isFirst, last: isLast,
         });
@@ -242,6 +244,7 @@ async function submitMatch() {
             funRatingTotal:  increment(funRating),
             funRatingCount:  increment(funRating > 0 ? 1 : 0),
             solRingOpening:  increment(row.querySelector('.p-sol').checked ? 1 : 0),
+            mulliganCount:   increment(row.querySelector('.p-mulligan').checked ? 1 : 0),
             firstBloodCount: increment(isBlood ? 1 : 0),
             mostRampCount:   increment(isRamp  ? 1 : 0),
             mostDrawCount:   increment(isDraw  ? 1 : 0),

@@ -81,6 +81,7 @@ export function buildStandingsCard(
             </div>
             <div class="stat-badges">
                 <div class="stat-badge-pill pill-sol">SOL RING <b>${deck.solRingOpening  || 0}</b></div>
+                <div class="stat-badge-pill pill-mulligan">2+ MULLIGANS <b>${deck.mulliganCount || 0}</b></div>
                 <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${deck.firstBloodCount || 0}</b></div>
                 <div class="stat-badge-pill pill-ramp">MOST RAMP <b>${deck.mostRampCount  || 0}</b></div>
                 <div class="stat-badge-pill pill-draw">MOST DRAW <b>${deck.mostDrawCount  || 0}</b></div>
@@ -146,5 +147,14 @@ export function initStandingsListener(
 
         // Let the caller run roster / insight refresh, pod init, etc.
         if (onAfterRender) onAfterRender(allDecks);
+    }, (error) => {
+        console.error("Firestore decks snapshot error:", error);
+        loadingEl.style.display = 'none';
+        deckListEl.innerHTML = `
+            <div style="text-align:center; padding: 40px 20px; color: var(--text-dim);">
+                <div style="font-size: 2rem; margin-bottom: 10px;">⚠️</div>
+                <div style="font-weight: 800; color: var(--danger); margin-bottom: 6px;">Failed to load data</div>
+                <div style="font-size: 0.8rem;">${error.code || error.message}</div>
+            </div>`;
     });
 }

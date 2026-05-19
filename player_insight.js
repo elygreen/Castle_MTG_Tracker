@@ -113,13 +113,14 @@ export function renderInsightTab() {
 
     // Aggregate totals across all of the player's decks
     const playerStats = playerDecks.reduce((acc, d) => ({
-        games: acc.games + (d.gamesPlayed || ((d.wins || 0) + (d.losses || 0)) || 0),
-        blood: acc.blood + (d.firstBloodCount  || 0),
-        ramp:  acc.ramp  + (d.mostRampCount    || 0),
-        draw:  acc.draw  + (d.mostDrawCount    || 0),
-        first: acc.first + (d.wentFirstCount   || 0),
-        last:  acc.last  + (d.wentLastCount    || 0),
-    }), { games: 0, blood: 0, ramp: 0, draw: 0, first: 0, last: 0 });
+        games:    acc.games    + (d.gamesPlayed || ((d.wins || 0) + (d.losses || 0)) || 0),
+        blood:    acc.blood    + (d.firstBloodCount  || 0),
+        ramp:     acc.ramp     + (d.mostRampCount    || 0),
+        draw:     acc.draw     + (d.mostDrawCount    || 0),
+        first:    acc.first    + (d.wentFirstCount   || 0),
+        last:     acc.last     + (d.wentLastCount    || 0),
+        mulligan: acc.mulligan + (d.mulliganCount    || 0),
+    }), { games: 0, blood: 0, ramp: 0, draw: 0, first: 0, last: 0, mulligan: 0 });
 
     const playerColor = _getPlayerColor(selectedInsightPlayer);
 
@@ -137,6 +138,7 @@ export function renderInsightTab() {
                 <div class="stat-badge-pill pill-draw">MOST DRAW <b>${playerStats.draw}</b></div>
                 <div class="stat-badge-pill pill-first">WENT FIRST <b>${playerStats.first}</b></div>
                 <div class="stat-badge-pill pill-last">WENT LAST <b>${playerStats.last}</b></div>
+                <div class="stat-badge-pill pill-mulligan">2+ MULLIGANS <b>${playerStats.mulligan}</b></div>
             </div>
         </div>
 
@@ -178,6 +180,7 @@ export function renderInsightTab() {
                                 <div class="stat-badge-pill pill-draw">MOST DRAW <b>${deck.mostDrawCount || 0}${calcPct(deck.mostDrawCount)}</b></div>
                                 <div class="stat-badge-pill pill-first">1ST <b>${deck.wentFirstCount || 0}${calcPct(deck.wentFirstCount)}</b></div>
                                 <div class="stat-badge-pill pill-last">LAST <b>${deck.wentLastCount || 0}${calcPct(deck.wentLastCount)}</b></div>
+                                <div class="stat-badge-pill pill-mulligan">MULLIGAN <b>${deck.mulliganCount || 0}${calcPct(deck.mulliganCount)}</b></div>
                             </div>
                         </div>`;
                 }).join('')}
