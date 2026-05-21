@@ -51,7 +51,47 @@ body {
 .modal-actions button { width: 100%; }
 
 .container { margin: 0 auto; transition: max-width 0.3s ease; }
-header h1 { font-size: 1.5rem; font-weight: 800; text-align: center; margin-bottom: 20px; }
+.site-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+.site-title-eyebrow {
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+.site-title h1 {
+    margin: 0;
+    font-size: 1.7rem;
+    font-weight: 900;
+    color: white;
+    letter-spacing: -1px;
+    text-align: center;
+}
+.site-title-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 320px;
+}
+.site-title-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border));
+}
+.site-title-line.right {
+    background: linear-gradient(to left, transparent, var(--border));
+}
+.site-title-divider-icon {
+    font-size: 0.85rem;
+    color: #5a6370;
+}
 
 .tab-nav { display: flex; gap: 8px; margin-bottom: 20px; background: var(--surface); padding: 5px; border-radius: var(--radius); }
 .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; background: transparent; color: var(--text-dim); font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; display: block; transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease; }
