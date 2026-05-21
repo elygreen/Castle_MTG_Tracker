@@ -8,7 +8,7 @@ import {
     getAllPlayers, getAllDecks, setAllPlayers, setAllDecks,
     getPlayerColor, getTagStyle, getColorPips, formatBracket,
     openModal, closeModal, renderColorGrid,
-    MODERN_COLORS, BRACKET_COLORS,
+    MODERN_COLORS, BRACKET_COLORS, TAG_COLORS,
 } from "./shared.js";
 
 import { initDatabase, updateRosterView } from "./database.js";
@@ -27,6 +27,7 @@ checkAuth().then(level => {
             closeModal,
             renderColorGrid,
             MODERN_COLORS,
+            TAG_COLORS,
         },
         {
             onPlayersUpdated:     (players) => { setAllPlayers(players); },

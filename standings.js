@@ -10,18 +10,31 @@ import {
 
 /**
  * Sorts a deck array for leaderboard display.
- * "Misc" decks are always pushed to the bottom; everything else is alpha by deckName.
+ * "Misc" decks are always pushed to the bottom.
+ * For stat keys, sorts descending by value; for 'deckName', sorts A–Z.
  *
  * @param {Object[]} decks
+ * @param {string}   [sortKey='gamesPlayed']
  * @returns {Object[]} sorted copy
  */
-function sortDecksForStandings(decks) {
+function sortDecksForStandings(decks, sortKey = 'gamesPlayed') {
     return [...decks].sort((a, b) => {
-        const nameA = a.deckName.toLowerCase();
-        const nameB = b.deckName.toLowerCase();
+        const nameA = (a.deckName || '').toLowerCase();
+        const nameB = (b.deckName || '').toLowerCase();
         if (nameA === 'misc' && nameB !== 'misc') return 1;
         if (nameB === 'misc' && nameA !== 'misc') return -1;
-        return nameA.localeCompare(nameB);
+
+        if (sortKey === 'deckName') return nameA.localeCompare(nameB);
+
+        // For gamesPlayed, fall back to computed wins+losses for legacy docs
+        const valA = sortKey === 'gamesPlayed'
+            ? (a.gamesPlayed || ((a.wins || 0) + (a.losses || 0)) || 0)
+            : (a[sortKey] || 0);
+        const valB = sortKey === 'gamesPlayed'
+            ? (b.gamesPlayed || ((b.wins || 0) + (b.losses || 0)) || 0)
+            : (b[sortKey] || 0);
+
+        return valB - valA;
     });
 }
 
@@ -80,6 +93,7 @@ export function buildStandingsCard(
                 </div>
             </div>
             <div class="stat-badges">
+                <div class="stat-badge-pill" style="background: rgba(255,255,255,0.1);">GAMES <b>${deck.gamesPlayed || ((deck.wins || 0) + (deck.losses || 0)) || 0}</b></div>
                 <div class="stat-badge-pill pill-sol">SOL RING <b>${deck.solRingOpening  || 0}</b></div>
                 <div class="stat-badge-pill pill-mulligan">2+ MULLIGANS <b>${deck.mulliganCount || 0}</b></div>
                 <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${deck.firstBloodCount || 0}</b></div>
@@ -122,17 +136,13 @@ export function initStandingsListener(
     getTagStyle,
     { onDecksUpdated = null, onAfterRender = null } = {}
 ) {
-    return onSnapshot(query(collection(db, "decks")), (snapshot) => {
-        loadingEl.style.display = 'none';
+    const sortSelect = document.getElementById('standingsSortSelect');
+
+    // Renders the deck list using the current sort selection
+    function renderSorted(allDecks) {
+        const sortKey = sortSelect ? sortSelect.value : 'gamesPlayed';
         deckListEl.innerHTML = '';
-
-        const allDecks = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-
-        // Notify caller so it can update its own allDecks reference
-        if (onDecksUpdated) onDecksUpdated(allDecks);
-
-        const sorted = sortDecksForStandings(allDecks);
-
+        const sorted = sortDecksForStandings(allDecks, sortKey);
         sorted.forEach(deck => {
             const card = buildStandingsCard(
                 deck,
@@ -144,9 +154,24 @@ export function initStandingsListener(
             );
             deckListEl.appendChild(card);
         });
+    }
 
-        // Let the caller run roster / insight refresh, pod init, etc.
-        if (onAfterRender) onAfterRender(allDecks);
+    // Wire the sort select — re-sorts the cached deck list without a Firestore round-trip
+    let _cachedDecks = [];
+    if (sortSelect) {
+        sortSelect.addEventListener('change', () => renderSorted(_cachedDecks));
+    }
+
+    return onSnapshot(query(collection(db, "decks")), (snapshot) => {
+        loadingEl.style.display = 'none';
+
+        _cachedDecks = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        if (onDecksUpdated) onDecksUpdated(_cachedDecks);
+
+        renderSorted(_cachedDecks);
+
+        if (onAfterRender) onAfterRender(_cachedDecks);
     }, (error) => {
         console.error("Firestore decks snapshot error:", error);
         loadingEl.style.display = 'none';

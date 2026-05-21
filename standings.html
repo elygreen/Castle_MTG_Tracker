@@ -22,7 +22,23 @@
         </nav>
 
         <section>
-            <h2>Leaderboard</h2>
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                <h2 style="margin: 0;">Leaderboard</h2>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); white-space: nowrap;">Sort By</label>
+                    <select id="standingsSortSelect" style="margin: 0; padding: 6px 10px; font-size: 0.75rem; font-weight: 700; min-width: 160px;">
+                        <option value="gamesPlayed">Games Played</option>
+                        <option value="solRingOpening">Sol Ring</option>
+                        <option value="mulliganCount">2+ Mulligans</option>
+                        <option value="firstBloodCount">First Blood</option>
+                        <option value="mostRampCount">Most Ramp</option>
+                        <option value="mostDrawCount">Most Draw</option>
+                        <option value="wentFirstCount">Went First</option>
+                        <option value="wentLastCount">Went Last</option>
+                        <option value="deckName">Name (A–Z)</option>
+                    </select>
+                </div>
+            </div>
             <div id="loading">Syncing with multiverses...</div>
             <ul id="deckList" style="list-style: none; padding: 0;"></ul>
         </section>

@@ -19,6 +19,7 @@
     --clr-first: #9c27b0;
     --clr-last: #795548;
     --clr-draw-alt: #607d8b;
+    --clr-mulligan: #ff7b00;
 }
 
 html {
@@ -122,6 +123,7 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
 .pill-draw { background: var(--clr-draw); }
 .pill-first { background: var(--clr-first); }
 .pill-last { background: var(--clr-last); }
+.pill-mulligan { background: var(--clr-mulligan); }
 
 /* Roster UI Enhancements */
 .roster-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
@@ -432,6 +434,7 @@ button:active { filter: brightness(0.9); transform: translateY(0); box-shadow: n
 .pill-first:has(input:checked) { background: var(--clr-first) !important; border-color: rgba(255,255,255,0.3); }
 .pill-last:has(input:checked) { background: var(--clr-last) !important; border-color: rgba(255,255,255,0.3); }
 .pill-sol:has(input:checked) { background: var(--clr-sol) !important; color: #000; border-color: rgba(0,0,0,0.2); }
+.pill-mulligan:has(input:checked) { background: var(--clr-mulligan) !important; border-color: rgba(255,255,255,0.3); }
 
 /* Shared Match Awards Section */
 .shared-stats-row {
@@ -637,40 +640,7 @@ textarea:focus {
     }
 }
 
-/* Container that hides the "off-screen" slide */
-.insight-viewport {
-    width: 100%;
-    overflow: hidden;
-    position: relative;
-    /* Added: ensures the shadow of the content inside doesn't bleed out */
-    padding: 5px 0; 
-    margin: -5px 0;
-}
-
-/* The long track containing both views */
-.insight-slider {
-    display: flex;
-    width: 200%;
-    /* Refined: ensures smooth hardware-accelerated movement */
-    will-change: transform;
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Individual slides */
-.insight-slide {
-    width: 50%;
-    flex-shrink: 0;
-    /* Added: Ensures padding/margins don't push the width past 50% */
-    box-sizing: border-box; 
-    /* Added: Provides a tiny gap so shadows don't touch the seam */
-    padding-right: 15px; 
-}
-
-/* State classes to trigger the slide */
-.show-detail {
-    /* Refined: translate3d is better for performance/flicker prevention */
-    transform: translate3d(-50%, 0, 0);
-}
+/* Insight empty state placeholder */
 
 #insightDeckList .player-edit-btn {
     padding: 2px;

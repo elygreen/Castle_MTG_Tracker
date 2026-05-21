@@ -24,17 +24,13 @@
         </nav>
 
         <section>
-            <div id="insightHeader" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 id="insightTitle" style="margin: 0;">Player Insight</h2>
-                <button id="backToPlayersBtn" class="btn-blue" style="display: none; padding: 5px 15px;">← Back to Players</button>
+            <div style="margin-bottom: 20px;">
+                <select id="insightPlayerSelect" style="margin: 0; padding: 8px 12px; font-size: 0.9rem; font-weight: 700; min-width: 200px;">
+                    <option value="">Select a player...</option>
+                </select>
             </div>
 
-            <div class="insight-viewport">
-                <div id="insightSlider" class="insight-slider">
-                    <div id="insightPlayerList" class="insight-slide"></div>
-                    <div id="insightDetailView" class="insight-slide"></div>
-                </div>
-            </div>
+            <div id="insightDetailView"></div>
         </section>
 
         <!-- Modal (needed by edit-deck trigger from insight) -->

@@ -13,6 +13,7 @@ let selectedInsightPlayer = null;
 let selectedInsightDeckId = null;
 let activeBarChart        = null;
 let activePieChart        = null;
+let activePlayRatePieChart = null;
 
 // Refs to app.js data — set once via initInsight()
 let _getAllDecks    = null;
@@ -47,23 +48,24 @@ export function initInsight(deps) {
     _formatBracket  = deps.formatBracket;
     _getColorPips   = deps.getColorPips;
 
-    // Back button
-    document.getElementById('backToPlayersBtn').onclick = () => {
-        selectedInsightPlayer = null;
+    const select = document.getElementById('insightPlayerSelect');
+    select.addEventListener('change', () => {
+        selectedInsightPlayer = select.value || null;
+        selectedInsightDeckId = null;
         renderInsightTab();
-    };
+    });
 
-    // Expose select handler for inline onclick attributes in rendered HTML
-    window.selectInsightPlayer = (name) => {
-        selectedInsightPlayer = name;
-        renderInsightTab();
-    };
+    // Default to first player alphabetically once data is available
+    const allPlayers = _getAllPlayers();
+    if (allPlayers.length > 0 && !selectedInsightPlayer) {
+        const sorted = [...allPlayers].sort((a, b) => a.name.localeCompare(b.name));
+        selectedInsightPlayer = sorted[0].name;
+    }
 
     window.selectInsightDeck = (deckId) => {
         selectedInsightDeckId = selectedInsightDeckId === deckId ? null : deckId;
-        const allDecks = _getAllDecks();
-        const playerDecks = allDecks.filter(d => d.player === selectedInsightPlayer);
-        initBarChart(playerDecks, document.getElementById('insightStatSelect')?.value || 'games');
+        const playerDecks = _getAllDecks().filter(d => d.player === selectedInsightPlayer);
+        initBarChart(playerDecks, document.getElementById('insightStatSelect')?.value || 'gamesPlayed');
     };
 }
 
@@ -72,46 +74,42 @@ export function initInsight(deps) {
  * or the underlying deck data is refreshed.
  */
 export function renderInsightTab() {
-    const playerListContainer = document.getElementById('insightPlayerList');
-    const detailContainer     = document.getElementById('insightDetailView');
-    const slider              = document.getElementById('insightSlider');
-    const backBtn             = document.getElementById('backToPlayersBtn');
-    const title               = document.getElementById('insightTitle');
+    const detailContainer = document.getElementById('insightDetailView');
+    const select          = document.getElementById('insightPlayerSelect');
 
     const allPlayers = _getAllPlayers();
     const allDecks   = _getAllDecks();
 
-    // Always rebuild the player grid (left slide)
-    playerListContainer.innerHTML = `
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 20px;">
-            ${allPlayers.map(p => `
-                <button class="roster-tab-btn"
-                        style="background-color: ${p.color}; border-color: ${p.color}; text-align: center; height: 80px;"
-                        onclick="selectInsightPlayer('${p.name}')">
-                    ${p.name}
-                </button>
-            `).join('')}
-        </div>`;
+    // Keep dropdown options in sync with current player list
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">Select a player...</option>' +
+        allPlayers.map(p =>
+            `<option value="${p.name}" ${p.name === selectedInsightPlayer ? 'selected' : ''}
+                style="color: ${p.color}; font-weight: 800;">${p.name}</option>`
+        ).join('');
+    if (currentVal && allPlayers.some(p => p.name === currentVal)) {
+        select.value = currentVal;
+    }
+
+    // Default to first player alphabetically if nothing is selected yet
+    if (!selectedInsightPlayer && allPlayers.length > 0) {
+        const sorted = [...allPlayers].sort((a, b) => a.name.localeCompare(b.name));
+        selectedInsightPlayer = sorted[0].name;
+        select.value = selectedInsightPlayer;
+    }
 
     if (!selectedInsightPlayer) {
-        selectedInsightDeckId = null;
-        backBtn.style.display = 'none';
-        title.textContent = "Select a Player";
-        slider.classList.remove('show-detail');
-        setTimeout(() => {
-            if (!selectedInsightPlayer) detailContainer.innerHTML = '';
-        }, 500);
+        detailContainer.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; color: var(--text-dim);">
+                <div style="font-size: 3rem; margin-bottom: 12px;">🧙</div>
+                <div style="font-weight: 800; font-size: 1rem;">Select a player to view their insight</div>
+            </div>`;
         return;
     }
 
-    // --- Detail view ---
-    backBtn.style.display = 'block';
-    title.textContent = '';
-    slider.classList.add('show-detail');
-
     const playerDecks = allDecks.filter(d => d.player === selectedInsightPlayer);
+    const playerColor = _getPlayerColor(selectedInsightPlayer);
 
-    // Aggregate totals across all of the player's decks
     const playerStats = playerDecks.reduce((acc, d) => ({
         games:    acc.games    + (d.gamesPlayed || ((d.wins || 0) + (d.losses || 0)) || 0),
         blood:    acc.blood    + (d.firstBloodCount  || 0),
@@ -122,55 +120,57 @@ export function renderInsightTab() {
         mulligan: acc.mulligan + (d.mulliganCount    || 0),
     }), { games: 0, blood: 0, ramp: 0, draw: 0, first: 0, last: 0, mulligan: 0 });
 
-    const playerColor = _getPlayerColor(selectedInsightPlayer);
-
     detailContainer.innerHTML = `
-        <div class="card" style="margin-bottom: 25px; padding: 25px; border-left: 5px solid ${playerColor}; background: linear-gradient(90deg, var(--surface) 0%, rgba(0,0,0,0.2) 100%);">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
-                <div>
-                    <h1 style="margin: 0; font-size: 2.5rem; font-weight: 900; color: ${playerColor}; text-transform: uppercase; letter-spacing: -1px;">${selectedInsightPlayer}</h1>
-                    <p style="margin: 0; color: var(--text-dim); font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Overall Performance</p>
+        <div class="card" style="margin-bottom: 15px; padding: 18px; border-left: 5px solid ${playerColor}; background: linear-gradient(90deg, var(--surface) 0%, rgba(0,0,0,0.2) 100%);">
+            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 220px;">
+                    <h1 style="margin: 0; font-size: 2rem; font-weight: 900; color: ${playerColor}; text-transform: uppercase; letter-spacing: -1px;">${selectedInsightPlayer}</h1>
+                    <p style="margin: 2px 0 0; color: var(--text-dim); font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Overall Performance</p>
+                    <div class="stat-badges" style="margin-top: 12px; background: rgba(0,0,0,0.3); padding: 10px; gap: 8px;">
+                        <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${playerStats.blood}</b></div>
+                        <div class="stat-badge-pill pill-ramp">MOST RAMP <b>${playerStats.ramp}</b></div>
+                        <div class="stat-badge-pill pill-draw">MOST DRAW <b>${playerStats.draw}</b></div>
+                        <div class="stat-badge-pill pill-first">WENT FIRST <b>${playerStats.first}</b></div>
+                        <div class="stat-badge-pill pill-last">WENT LAST <b>${playerStats.last}</b></div>
+                        <div class="stat-badge-pill pill-mulligan">2+ MULLIGANS <b>${playerStats.mulligan}</b></div>
+                    </div>
                 </div>
-            </div>
-            <div class="stat-badges" style="margin-top: 20px; background: rgba(0,0,0,0.3); padding: 15px; gap: 10px;">
-                <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${playerStats.blood}</b></div>
-                <div class="stat-badge-pill pill-ramp">MOST RAMP <b>${playerStats.ramp}</b></div>
-                <div class="stat-badge-pill pill-draw">MOST DRAW <b>${playerStats.draw}</b></div>
-                <div class="stat-badge-pill pill-first">WENT FIRST <b>${playerStats.first}</b></div>
-                <div class="stat-badge-pill pill-last">WENT LAST <b>${playerStats.last}</b></div>
-                <div class="stat-badge-pill pill-mulligan">2+ MULLIGANS <b>${playerStats.mulligan}</b></div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 150px;">
+                    <label style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; font-weight:800; letter-spacing:1px;">Deck Color Identity</label>
+                    <div style="height: 140px; width: 100%; position: relative;"><canvas id="colorPieChart"></canvas></div>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 150px;">
+                    <label style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; font-weight:800; letter-spacing:1px;">Play % Color Identity</label>
+                    <div style="height: 140px; width: 100%; position: relative;"><canvas id="playRatePieChart"></canvas></div>
+                </div>
             </div>
         </div>
 
         <div class="insight-grid">
             <div id="insightDeckList" style="display: flex; flex-direction: column; gap: 15px;">
                 ${playerDecks.map(deck => {
-                    const total  = deck.gamesPlayed || ((deck.wins || 0) + (deck.losses || 0)) || 0;
-                    const bgArt  = deck.commanderImage ? `url(${deck.commanderImage})` : 'none';
+                    const total   = deck.gamesPlayed || ((deck.wins || 0) + (deck.losses || 0)) || 0;
+                    const bgArt   = deck.commanderImage ? `url(${deck.commanderImage})` : 'none';
                     const calcPct = (val) => total > 0 ? ` (${((val / total) * 100).toFixed(0)}%)` : ' (0%)';
                     return `
                         <div class="deck-card ${deck.id === selectedInsightDeckId ? 'selected' : ''}"
                              onclick="selectInsightDeck('${deck.id}')"
                              style="--commander-art: ${bgArt}; cursor: pointer;">
                             <div class="deck-header">
-                                <div>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <h3 style="margin:0; font-size:1.5rem; display: flex; align-items: center;">
+                                <div style="display: flex; align-items: flex-start; justify-content: space-between; width: 100%;">
+                                    <div>
+                                        <h3 style="margin:0; font-size:1.5rem; display: flex; align-items: center; gap: 8px;">
+                                            <span style="font-size: 1.2rem; letter-spacing: -3px;">${_getColorPips(deck.colorIdentity)}</span>
                                             ${deck.deckName}
-                                            <span style="font-size: 1.0rem; color: white; background: ${_BRACKET_COLORS[deck.bracket] || 'var(--accent)'}; padding: 1px 5px; border-radius: 4px; margin-left: 8px;">
+                                            <span style="font-size: 1.0rem; color: white; background: ${_BRACKET_COLORS[deck.bracket] || 'var(--accent)'}; padding: 1px 5px; border-radius: 4px;">
                                                 ${_formatBracket(deck.bracket)}
                                             </span>
-                                            <span style="margin-left: 10px; font-size: 1.2rem; letter-spacing: -3px;">
-                                                ${_getColorPips(deck.colorIdentity)}
-                                            </span>
                                         </h3>
-                                        <div class="player-controls">
-                                            <button class="player-edit-btn" onclick="event.stopPropagation(); handleEditDeckSettingsTrigger('${deck.id}')">✏️</button>
+                                        <div class="deck-tags-grid" style="margin-top: 5px;">
+                                            ${(deck.deckTags || []).map(t => `<span class="individual-tag" style="${_getTagStyle(t)}">${t}</span>`).join('')}
                                         </div>
                                     </div>
-                                    <div class="deck-tags-grid" style="margin-top: 5px;">
-                                        ${(deck.deckTags || []).map(t => `<span class="individual-tag" style="${_getTagStyle(t)}">${t}</span>`).join('')}
-                                    </div>
+                                    <button class="player-edit-btn" onclick="event.stopPropagation(); handleEditDeckSettingsTrigger('${deck.id}')">✏️</button>
                                 </div>
                             </div>
                             <div class="stat-badges">
@@ -187,23 +187,26 @@ export function renderInsightTab() {
             </div>
 
             <div class="insight-stats-card">
-                <div class="pie-chart-container" style="margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
-                    <label style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; font-weight:800; display:block; margin-bottom:10px; text-align:center;">Color Preference</label>
-                    <div style="height: 180px; position: relative;"><canvas id="colorPieChart"></canvas></div>
-                </div>
                 <div class="chart-controls">
                     <select id="insightStatSelect" style="margin:0;">
-                        <option value="games">Total Games played</option>
+                        <option value="gamesPlayed">Games Played</option>
+                        <option value="solRingOpening">Sol Ring</option>
+                        <option value="mulliganCount">2+ Mulligans</option>
+                        <option value="firstBloodCount">First Blood</option>
+                        <option value="mostRampCount">Most Ramp</option>
+                        <option value="mostDrawCount">Most Draw</option>
+                        <option value="wentFirstCount">Went First</option>
+                        <option value="wentLastCount">Went Last</option>
                     </select>
                 </div>
                 <canvas id="insightChart"></canvas>
             </div>
         </div>`;
 
-    // Init charts after DOM is rendered
     const currentStat = document.getElementById('insightStatSelect').value;
     initBarChart(playerDecks, currentStat);
     initPieChart(playerDecks);
+    initPlayRatePieChart(playerDecks);
     document.getElementById('insightStatSelect').onchange = (e) => initBarChart(playerDecks, e.target.value);
 }
 
@@ -211,7 +214,7 @@ export function renderInsightTab() {
 // Charts
 // ---------------------------------------------------------------------------
 
-function initBarChart(decks, stat = 'games') {
+function initBarChart(decks, stat = 'gamesPlayed') {
     const canvas = document.getElementById('insightChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -221,14 +224,14 @@ function initBarChart(decks, stat = 'games') {
         activeBarChart = null;
     }
 
-    const sortedDecks = [...decks].sort((a, b) => {
-        const valA = a.gamesPlayed || ((a.wins || 0) + (a.losses || 0)) || 0;
-        const valB = b.gamesPlayed || ((b.wins || 0) + (b.losses || 0)) || 0;
-        return valB - valA;
-    });
+    const getValue = (deck) => {
+        if (stat === 'gamesPlayed') return deck.gamesPlayed || ((deck.wins || 0) + (deck.losses || 0)) || 0;
+        return deck[stat] || 0;
+    };
 
-    const dataLabels = sortedDecks.map(d => d.deckName);
-    const dataValues = sortedDecks.map(d => d.gamesPlayed || ((d.wins || 0) + (d.losses || 0)) || 0);
+    const sortedDecks = [...decks].sort((a, b) => getValue(b) - getValue(a));
+    const dataLabels  = sortedDecks.map(d => d.deckName);
+    const dataValues  = sortedDecks.map(d => getValue(d));
 
     const PALETTE = ["#3d85ff", "#ff4444", "#4caf50", "#ffeb3b", "#9c27b0", "#ff9800", "#00bcd4", "#e91e63"];
     const backgroundColors = sortedDecks.map((d, i) => {
@@ -238,7 +241,7 @@ function initBarChart(decks, stat = 'games') {
             : (d.id === selectedInsightDeckId ? base : base + "22");
     });
 
-    const calculatedHeight = (sortedDecks.length * 35) + 100;
+    const calculatedHeight = (sortedDecks.length * 18) + 30;
     canvas.style.height = `${calculatedHeight}px`;
 
     activeBarChart = new Chart(ctx, {
@@ -250,9 +253,9 @@ function initBarChart(decks, stat = 'games') {
                 data: dataValues,
                 backgroundColor: backgroundColors,
                 borderWidth: 0,
-                borderRadius: 4,
-                barPercentage: 0.5,
-                categoryPercentage: 0.8
+                borderRadius: 3,
+                barPercentage: 0.9,
+                categoryPercentage: 0.9
             }]
         },
         options: {
@@ -273,7 +276,7 @@ function initBarChart(decks, stat = 'games') {
                             const deckId = sortedDecks[context.index]?.id;
                             return deckId === selectedInsightDeckId ? '#ffffff' : '#8e9297';
                         },
-                        font: { weight: 'bold', size: 11 }
+                        font: { weight: 'bold', size: 10 }
                     }
                 }
             },
@@ -285,7 +288,7 @@ function initBarChart(decks, stat = 'games') {
                     anchor: 'end',
                     align: 'right',
                     offset: 5,
-                    font: { weight: 'bold', size: 11 },
+                    font: { weight: 'bold', size: 10 },
                     formatter: (value) => value
                 }
             }
@@ -303,31 +306,33 @@ function initPieChart(decks) {
         activePieChart = null;
     }
 
-    // Weighted color distribution (colorless excluded)
+    // Weighted color distribution — each deck contributes 1 total weight split across its colors
+    // Misc decks are excluded as they're a stat catch-all, not a real deck
     const colorTotals = { W: 0, U: 0, B: 0, R: 0, G: 0 };
-    decks.forEach(deck => {
-        const colors = deck.colorIdentity || [];
+    let colorlessCount = 0;
+
+    const realDecks = decks.filter(d => (d.deckName || '').toLowerCase() !== 'misc');
+    realDecks.forEach(deck => {
+        const colors = (deck.colorIdentity || []).filter(c => Object.prototype.hasOwnProperty.call(colorTotals, c));
         if (colors.length > 0) {
             const weight = 1 / colors.length;
-            colors.forEach(c => {
-                if (Object.prototype.hasOwnProperty.call(colorTotals, c)) {
-                    colorTotals[c] += weight;
-                }
-            });
+            colors.forEach(c => { colorTotals[c] += weight; });
+        } else {
+            colorlessCount += 1;
         }
     });
 
     const colorMap = {
-        W: { label: 'White', color: '#f8f1d1' },
-        U: { label: 'Blue',  color: '#007dddff' },
-        B: { label: 'Black', color: '#0f0801ff' },
-        R: { label: 'Red',   color: '#ca0912ff' },
-        G: { label: 'Green', color: '#049931ff' }
+        W: { label: 'White',     color: '#f0e6c0' },
+        U: { label: 'Blue',      color: '#1a7ddd' },
+        B: { label: 'Black',     color: '#6b5e52' },
+        R: { label: 'Red',       color: '#d63b20' },
+        G: { label: 'Green',     color: '#2a9640' },
     };
 
-    const labels    = [];
-    const data      = [];
-    const bgColors  = [];
+    const labels   = [];
+    const data     = [];
+    const bgColors = [];
 
     Object.keys(colorTotals).forEach(key => {
         if (colorTotals[key] > 0) {
@@ -336,6 +341,12 @@ function initPieChart(decks) {
             bgColors.push(colorMap[key].color);
         }
     });
+
+    if (colorlessCount > 0) {
+        labels.push('Colorless');
+        data.push(colorlessCount);
+        bgColors.push('#9e9e9e');
+    }
 
     if (data.length === 0) return;
 
@@ -346,24 +357,107 @@ function initPieChart(decks) {
             datasets: [{
                 data,
                 backgroundColor: bgColors,
-                borderWidth: 1,
-                borderColor: 'var(--surface)'
+                borderWidth: 2,
+                borderColor: 'rgba(0,0,0,0.4)',
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'right',
-                    labels: { color: '#8e9297', font: { size: 10, weight: 'bold' }, padding: 15 }
-                },
+                legend: { display: false },
                 tooltip: {
                     callbacks: {
                         label(context) {
                             const value = context.raw || 0;
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            return `${((value / total) * 100).toFixed(1)}%`;
+                            return ` ${context.label}: ${((value / total) * 100).toFixed(1)}%`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function initPlayRatePieChart(decks) {
+    const canvas = document.getElementById('playRatePieChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    if (activePlayRatePieChart) {
+        activePlayRatePieChart.destroy();
+        activePlayRatePieChart = null;
+    }
+
+    // Weight each color by the deck's actual games played, split across its colors.
+    // Ex: a {R}{B} deck with 9 games contributes 4.5 to R and 4.5 to B.
+    // Misc decks are excluded.
+    const colorTotals = { W: 0, U: 0, B: 0, R: 0, G: 0 };
+    let colorlessGames = 0;
+
+    const realDecks = decks.filter(d => (d.deckName || '').toLowerCase() !== 'misc');
+    realDecks.forEach(deck => {
+        const games  = deck.gamesPlayed || ((deck.wins || 0) + (deck.losses || 0)) || 0;
+        const colors = (deck.colorIdentity || []).filter(c => Object.prototype.hasOwnProperty.call(colorTotals, c));
+        if (colors.length > 0) {
+            const weight = games / colors.length;
+            colors.forEach(c => { colorTotals[c] += weight; });
+        } else {
+            colorlessGames += games;
+        }
+    });
+
+    const colorMap = {
+        W: { label: 'White',    color: '#f0e6c0' },
+        U: { label: 'Blue',     color: '#1a7ddd' },
+        B: { label: 'Black',    color: '#6b5e52' },
+        R: { label: 'Red',      color: '#d63b20' },
+        G: { label: 'Green',    color: '#2a9640' },
+    };
+
+    const labels   = [];
+    const data     = [];
+    const bgColors = [];
+
+    Object.keys(colorTotals).forEach(key => {
+        if (colorTotals[key] > 0) {
+            labels.push(colorMap[key].label);
+            data.push(parseFloat(colorTotals[key].toFixed(2)));
+            bgColors.push(colorMap[key].color);
+        }
+    });
+
+    if (colorlessGames > 0) {
+        labels.push('Colorless');
+        data.push(colorlessGames);
+        bgColors.push('#9e9e9e');
+    }
+
+    if (data.length === 0) return;
+
+    activePlayRatePieChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels,
+            datasets: [{
+                data,
+                backgroundColor: bgColors,
+                borderWidth: 2,
+                borderColor: 'rgba(0,0,0,0.4)',
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label(context) {
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            return ` ${context.label}: ${((value / total) * 100).toFixed(1)}%`;
                         }
                     }
                 }

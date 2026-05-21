@@ -60,6 +60,7 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
     _closeModal       = deps.closeModal;
     _renderColorGrid  = deps.renderColorGrid;
     _MODERN_COLORS    = deps.MODERN_COLORS;
+    const TAG_COLORS  = deps.TAG_COLORS || {};
 
     // Expose window globals used by inline onclick attributes in rendered HTML
     window.handleEditDeckSettingsTrigger = (deckId) => handleEditDeckSettingsTrigger(deckId);
@@ -75,7 +76,30 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
     // Tag selector toggle (database.html only)
     const tagContainer = document.getElementById('tagSelectorContainer');
     const toggleTagsBtn = document.getElementById('toggleTagsBtn');
-    if (tagContainer && toggleTagsBtn) {
+    const tagSelector   = document.getElementById('tagSelector');
+    if (tagContainer && toggleTagsBtn && tagSelector) {
+        // Build colored tag checkboxes from TAG_COLORS
+        const allTags = Object.keys(TAG_COLORS);
+        tagSelector.innerHTML = allTags.map(tag => {
+            const color = TAG_COLORS[tag] || 'var(--text-dim)';
+            return `
+                <label class="tag-checkbox" style="border: 1px solid ${color}44; background: ${color}18;"
+                       data-color="${color}">
+                    <span style="color: ${color}; font-weight: 800;">${tag}</span>
+                    <input type="checkbox" value="${tag}" style="display:none;">
+                </label>`;
+        }).join('');
+
+        // Highlight fully on check
+        tagSelector.querySelectorAll('.tag-checkbox').forEach(label => {
+            const color = label.dataset.color;
+            const cb    = label.querySelector('input');
+            cb.addEventListener('change', () => {
+                label.style.background    = cb.checked ? color + '44' : color + '18';
+                label.style.borderColor   = cb.checked ? color : color + '44';
+            });
+        });
+
         toggleTagsBtn.onclick = () => {
             tagContainer.classList.toggle('tag-selector-hidden');
             tagContainer.classList.toggle('tag-selector-visible');
