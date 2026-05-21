@@ -187,7 +187,7 @@ export function renderInsightTab() {
                                             ${(deck.deckTags || []).map(t => `<span class="individual-tag" style="${_getTagStyle(t)}">${t}</span>`).join('')}
                                         </div>
                                     </div>
-                                    <button class="player-edit-btn" onclick="event.stopPropagation(); handleEditDeckSettingsTrigger('${deck.id}')">✏️</button>
+                                    ${isMisc ? '' : `<button class="player-edit-btn" onclick="event.stopPropagation(); handleEditDeckSettingsTrigger('${deck.id}')">✏️</button>`}
                                 </div>
                             </div>
                             <div class="stat-badges">
