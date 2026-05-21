@@ -212,9 +212,14 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
         // Auto-select first player on initial load
         if (!selectedRosterPlayer && players.length > 0) {
             selectedRosterPlayer = players[0].name;
+            const firstPlayer = players[0];
+            const label  = document.getElementById('rosterPlayerLabel');
+            if (label) {
+                label.textContent   = firstPlayer.name;
+                label.style.color   = firstPlayer.color;
+                label.style.fontWeight = '800';
+            }
             updateRosterView();
-            const firstBtn = document.querySelector('.roster-tab-btn');
-            if (firstBtn) firstBtn.classList.add('active');
         }
 
         if (onAfterPlayersRender) onAfterPlayersRender();
@@ -233,14 +238,6 @@ export function updateRosterView(playerName) {
     selectedRosterPlayer = playerName ?? selectedRosterPlayer;
     const rosterDeckView = document.getElementById('rosterDeckList');
     rosterDeckView.innerHTML = '';
-
-    // Update column header to show selected player name
-    const header = document.getElementById('rosterDeckListHeader');
-    if (header) {
-        header.textContent = selectedRosterPlayer || 'Decks';
-        const player = _getAllPlayers().find(p => p.name === selectedRosterPlayer);
-        header.style.color = player ? player.color : 'var(--text-main)';
-    }
 
     if (!selectedRosterPlayer) {
         rosterDeckView.innerHTML = `<p style="color: var(--text-dim); font-size: 0.8rem; text-align: center;">Select a player to view their decks.</p>`;
@@ -303,44 +300,59 @@ function _syncPlayerSelect(players) {
 }
 
 function _renderRosterTabs(players) {
-    const rosterTabs = document.getElementById('rosterTabs');
-    rosterTabs.innerHTML = '';
+    const trigger = document.getElementById('rosterPlayerTrigger');
+    const menu    = document.getElementById('rosterPlayerMenu');
+    const label   = document.getElementById('rosterPlayerLabel');
+    if (!trigger || !menu || !label) return;
+
+    // Build menu options
+    menu.innerHTML = '';
+    const placeholder = document.createElement('div');
+    placeholder.className = 'bracket-option placeholder';
+    placeholder.textContent = 'Select a player...';
+    placeholder.dataset.value = '';
+    menu.appendChild(placeholder);
 
     players.forEach(p => {
-        const container = document.createElement('div');
-        container.className = 'player-tab-container';
-
-        const btn = document.createElement('button');
-        btn.className = `roster-tab-btn ${selectedRosterPlayer === p.name ? 'active' : ''}`;
-        btn.textContent = p.name;
-        btn.style.backgroundColor = p.color;
-        btn.style.borderColor = p.color;
-        btn.onclick = () => {
+        const opt = document.createElement('div');
+        opt.className = 'bracket-option';
+        opt.textContent = p.name;
+        opt.dataset.value = p.name;
+        opt.style.color = p.color;
+        opt.style.fontWeight = '800';
+        opt.addEventListener('click', () => {
             selectedRosterPlayer = p.name;
+            label.textContent = p.name;
+            label.style.color = p.color;
+            label.style.fontWeight = '800';
+            trigger.classList.remove('open');
+            menu.classList.remove('open');
             updateRosterView();
-            document.querySelectorAll('.roster-tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        };
-
-        const controls = document.createElement('div');
-        controls.className = 'player-controls';
-
-        const editBtn = document.createElement('button');
-        editBtn.className = 'player-edit-btn';
-        editBtn.innerHTML = '✏️';
-        editBtn.onclick = (e) => { e.stopPropagation(); handleEditPlayerTrigger(p.id, p.name, p.color); };
-
-        const delBtn = document.createElement('button');
-        delBtn.className = 'player-del-btn';
-        delBtn.textContent = '✕';
-        delBtn.onclick = (e) => { e.stopPropagation(); handlePlayerDeletion(p.id, p.name); };
-
-        controls.appendChild(editBtn);
-        controls.appendChild(delBtn);
-        container.appendChild(btn);
-        container.appendChild(controls);
-        rosterTabs.appendChild(container);
+        });
+        menu.appendChild(opt);
     });
+
+    // Toggle open/close
+    trigger.onclick = () => {
+        trigger.classList.toggle('open');
+        menu.classList.toggle('open');
+    };
+    document.addEventListener('click', (e) => {
+        if (!trigger.contains(e.target) && !menu.contains(e.target)) {
+            trigger.classList.remove('open');
+            menu.classList.remove('open');
+        }
+    }, { capture: false });
+
+    // Restore current selection label if already set
+    if (selectedRosterPlayer) {
+        const player = players.find(p => p.name === selectedRosterPlayer);
+        if (player) {
+            label.textContent = player.name;
+            label.style.color = player.color;
+            label.style.fontWeight = '800';
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

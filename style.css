@@ -229,7 +229,7 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
 .player-edit-btn:active { transform: scale(0.95); }
 
 /* Manage/History Helper Styles */
-.manage-grid { display: grid; grid-template-columns: 1fr 0.65fr 1.35fr; grid-template-rows: auto; gap: 20px; align-items: start; }
+.manage-grid { display: grid; grid-template-columns: 1fr 1.6fr; grid-template-rows: auto; gap: 20px; align-items: start; }
 .manage-grid > .manage-col:first-child { grid-row: span 2; }
 @media (max-width: 900px) { .manage-grid { grid-template-columns: 1fr 1fr; } .manage-grid > .manage-col:first-child { grid-row: span 1; } }
 @media (max-width: 600px) { .manage-grid { grid-template-columns: 1fr; } }

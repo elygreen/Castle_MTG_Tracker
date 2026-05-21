@@ -165,14 +165,16 @@
 
             <div class="manage-col">
                 <section class="card roster-card">
-                    <h2 style="font-size: 1.2rem; margin-top: 0; margin-bottom: 16px; text-transform: capitalize; color: var(--text-main); letter-spacing: normal;">Player Roster</h2>
-                    <div id="rosterTabs" class="roster-tabs"></div>
-                </section>
-            </div>
-
-            <div class="manage-col">
-                <section class="card roster-card">
-                    <h2 id="rosterDeckListHeader" style="font-size: 1.2rem; margin-top: 0; margin-bottom: 16px; text-transform: capitalize; color: var(--text-main); letter-spacing: normal;">Decks</h2>
+                    <!-- Custom colored player dropdown -->
+                    <div class="bracket-dropdown-wrapper" style="margin-bottom: 16px;">
+                        <div class="bracket-dropdown-trigger" id="rosterPlayerTrigger" style="font-size: 1.1rem; font-weight: 800; padding: 12px 14px;">
+                            <span id="rosterPlayerLabel" style="color: var(--text-dim);">Select a player...</span>
+                            <span class="chevron"></span>
+                        </div>
+                        <div class="bracket-dropdown-menu" id="rosterPlayerMenu"></div>
+                    </div>
+                    <!-- Hidden roster tabs kept for database.js compatibility -->
+                    <div id="rosterTabs" style="display:none;"></div>
                     <div id="rosterDeckList" class="roster-deck-view">
                         <p style="color: var(--text-dim); font-size: 0.8rem; text-align: center;">Select a player to view their decks.</p>
                     </div>
