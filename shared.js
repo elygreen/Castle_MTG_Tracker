@@ -261,7 +261,8 @@ export const TAG_COLORS = {
     "Recursion":      "#673ab7", "Go Wide":      "#fdd835",
     "Goad":           "#e53935", "Graveyard":    "#8d9b8a",
     "Enchantress":    "#ab47bc", "Storm":        "#1e88e5",
-    "Theft":          "#f4511e"
+    "Theft":          "#f4511e",
+    "Drain":          "#5c9e8a"
 };
 
 // ---------------------------------------------------------------------------

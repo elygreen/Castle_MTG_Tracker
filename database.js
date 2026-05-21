@@ -354,7 +354,7 @@ function handleEditDeckSettingsTrigger(deckId) {
     const currentTags = deck.deckTags || [];
     const allAvailableTags = [
         "Aggro","Aristocrats","Artifacts","Big Mana","Blink","Burn","Combo","Control",
-        "Group Hug","Lands","Lifegain","Midrange","Mill","Reanimator","Spellslinger",
+        "Drain","Group Hug","Lands","Lifegain","Midrange","Mill","Reanimator","Spellslinger",
         "Stax","Tokens","Tribal","Voltron","+1/+1 Counters","Mono Color","Budget",
         "Recursion","Go Wide","Goad","Graveyard","Enchantress","Storm","Theft"
     ];
