@@ -208,7 +208,8 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
         const players = snapshot.docs.map(d => ({
             id: d.id,
             name: d.data().name,
-            color: d.data().color || "#3d85ff"
+            color: d.data().color || "#3d85ff",
+            archidektUrl: d.data().archidektUrl || '',
         }));
 
         if (onPlayersUpdated) onPlayersUpdated(players);
