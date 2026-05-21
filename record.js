@@ -10,7 +10,7 @@ import {
 import {
     db, checkAuth,
     getAllPlayers, getAllDecks, setAllPlayers, setAllDecks,
-    getPlayerColor, getTagStyle,
+    getPlayerColor, getTagStyle, getColorPips, getColorPipsHtml,
     MODERN_COLORS, BRACKET_COLORS, TAG_COLORS,
 } from "./shared.js";
 
@@ -83,16 +83,19 @@ function _initRecordPage() {
         refreshSharedStatDropdowns();
     };
 
-    ['shared-first', 'shared-last', 'shared-blood', 'shared-ramp', 'shared-draw'].forEach(id => {
+    ['shared-first', 'shared-last', 'shared-blood', 'shared-ramp', 'shared-draw', 'shared-interaction', 'shared-archenemy', 'shared-takenout'].forEach(id => {
         const sel = document.getElementById(id);
         if (!sel) return;
         sel.addEventListener('change', () => {
             const colorMap = {
-                'shared-first': 'var(--clr-first)',
-                'shared-last':  'var(--clr-last)',
-                'shared-blood': 'var(--clr-blood)',
-                'shared-ramp':  'var(--clr-ramp)',
-                'shared-draw':  'var(--clr-draw)'
+                'shared-first':       'var(--clr-first)',
+                'shared-last':        'var(--clr-last)',
+                'shared-blood':       'var(--clr-blood)',
+                'shared-ramp':        'var(--clr-ramp)',
+                'shared-draw':        'var(--clr-draw)',
+                'shared-interaction': 'var(--clr-interaction)',
+                'shared-archenemy':   'var(--clr-archenemy)',
+                'shared-takenout':    'var(--clr-takenout)',
             };
             sel.style.borderColor = sel.value ? colorMap[id] : 'var(--border)';
             sel.style.color = sel.value ? 'white' : 'var(--text-dim)';
@@ -100,6 +103,10 @@ function _initRecordPage() {
     });
 
     document.getElementById('submitMatchBtn').onclick = submitMatch;
+
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.enjoy-menu.open, .deck-menu.open').forEach(m => m.classList.remove('open'));
+    });
 }
 
 function addParticipant(defaultPlayerName = null) {
@@ -113,39 +120,118 @@ function addParticipant(defaultPlayerName = null) {
                     <option value="" disabled selected>Player...</option>
                     ${getAllPlayers().map(p => `<option value="${p.name}" style="color:${p.color}; font-weight:bold;">${p.name}</option>`).join('')}
                 </select>
-                <select class="p-deck"><option value="" disabled selected>Deck...</option></select>
-                <select class="p-deck-enjoyment enjoyment-select">
-                    <option value="0">Deck Enjoyment</option>
-                    ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}">${n} / 10</option>`).join('')}
-                </select>
+                <div class="deck-dropdown">
+                    <div class="deck-trigger">Deck...</div>
+                    <div class="deck-menu"></div>
+                    <input type="hidden" class="p-deck" value="">
+                </div>
+                <div class="enjoy-dropdown">
+                    <div class="enjoy-trigger">Deck Enjoyment</div>
+                    <div class="enjoy-menu">
+                        ${[1,2,3,4,5,6,7,8,9,10].map(n => `<div class="enjoy-option" data-value="${n}" style="font-weight: 800;">${n} / 10</div>`).join('')}
+                    </div>
+                    <input type="hidden" class="p-deck-enjoyment" value="0">
+                </div>
             </div>
             <button class="remove-participant" onclick="this.parentElement.parentElement.remove()">✕</button>
         </div>
         <div class="participant-row line-2">
             <label class="stat-pill pill-sol compact-pill"><input type="checkbox" class="p-sol" style="display:none"> Sol Ring</label>
             <label class="stat-pill pill-mulligan compact-pill"><input type="checkbox" class="p-mulligan" style="display:none"> 2+ Mulligans</label>
+            <label class="stat-pill pill-snapkeep compact-pill"><input type="checkbox" class="p-snapkeep" style="display:none"> Snap Keep</label>
         </div>
     `;
 
-    const ownerSel = row.querySelector('.p-owner');
-    const deckSel  = row.querySelector('.p-deck');
+    const ownerSel   = row.querySelector('.p-owner');
+    const deckTrigger = row.querySelector('.deck-trigger');
+    const deckMenu    = row.querySelector('.deck-menu');
+    const deckHidden  = row.querySelector('.p-deck');
+
+    // Open/close deck menu
+    deckTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.deck-menu.open').forEach(m => {
+            if (m !== deckMenu) m.classList.remove('open');
+        });
+        deckMenu.classList.toggle('open');
+    });
 
     ownerSel.onchange = () => {
         const playerName  = ownerSel.value;
         const playerColor = getPlayerColor(playerName);
         ownerSel.style.borderColor = playerColor;
-        ownerSel.style.color = playerColor;
-        ownerSel.style.fontWeight = '800';
+        ownerSel.style.color       = playerColor;
+        ownerSel.style.fontWeight  = '800';
+
+        // Reset deck selection
+        deckHidden.value        = '';
+        deckTrigger.textContent = 'Deck...';
+        deckTrigger.style.color       = 'var(--text-dim)';
+        deckTrigger.style.borderColor = 'var(--border)';
 
         let filtered = getAllDecks().filter(d => d.player === playerName);
         filtered.sort((a, b) => a.deckName === 'Misc' ? 1 : b.deckName === 'Misc' ? -1 : a.deckName.localeCompare(b.deckName));
-        deckSel.innerHTML = '<option value="" disabled selected>Deck...</option>' +
-            filtered.map(d => `<option value="${d.id}">${d.deckName}</option>`).join('');
+
+        deckMenu.innerHTML = filtered.map(d => {
+            const pips = getColorPipsHtml(d.colorIdentity);
+            return `<div class="deck-option" data-id="${d.id}">${pips}<span class="deck-option-name">${d.deckName}</span></div>`;
+        }).join('');
+
+        deckMenu.querySelectorAll('.deck-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                const deckObj = getAllDecks().find(d => d.id === opt.dataset.id);
+                const pips    = getColorPipsHtml(deckObj?.colorIdentity);
+                deckHidden.value        = opt.dataset.id;
+                deckTrigger.innerHTML   = `${pips}<span style="vertical-align:middle;">${deckObj?.deckName || ''}</span>`;
+                deckTrigger.style.color       = 'white';
+                deckTrigger.style.borderColor = playerColor;
+                deckMenu.classList.remove('open');
+                refreshSharedStatDropdowns();
+            });
+        });
+
         refreshSharedStatDropdowns();
     };
 
     row.querySelector('.remove-participant').addEventListener('click', () => {
         setTimeout(refreshSharedStatDropdowns, 0);
+    });
+
+    // Custom enjoyment dropdown
+    const enjoyColors = [
+        null,
+        '#c0392b', '#d44e1f', '#e06b1a', '#d4842a', '#b89e30',
+        '#8fb335', '#62c040', '#36cc50', '#18d464', '#10d275'
+    ];
+    const trigger  = row.querySelector('.enjoy-trigger');
+    const menu     = row.querySelector('.enjoy-menu');
+    const hidden   = row.querySelector('.p-deck-enjoyment');
+
+    // Colour each option on creation
+    row.querySelectorAll('.enjoy-option').forEach(opt => {
+        const val = parseInt(opt.dataset.value);
+        opt.style.color = enjoyColors[val];
+    });
+
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Close any other open menus first
+        document.querySelectorAll('.enjoy-menu.open').forEach(m => {
+            if (m !== menu) m.classList.remove('open');
+        });
+        menu.classList.toggle('open');
+    });
+
+    menu.querySelectorAll('.enjoy-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+            const val   = parseInt(opt.dataset.value);
+            const color = enjoyColors[val];
+            hidden.value          = val;
+            trigger.textContent   = `${val} / 10`;
+            trigger.style.color   = color;
+            trigger.style.borderColor = color;
+            menu.classList.remove('open');
+        });
     });
 
     document.getElementById('gameParticipants').appendChild(row);
@@ -171,7 +257,7 @@ function refreshSharedStatDropdowns() {
             return `<option value="${p}" style="color:${color}; font-weight:bold;">${p}</option>`;
         }).join('');
 
-    ['shared-blood','shared-ramp','shared-draw','shared-first','shared-last'].forEach(id => {
+    ['shared-blood','shared-ramp','shared-draw','shared-first','shared-last','shared-interaction','shared-archenemy','shared-takenout'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = makeOptions('Select a user...');
     });
@@ -205,15 +291,29 @@ async function submitMatch() {
         }
     }
 
-    const matchComment = document.getElementById('matchComment').value.trim();
-    const firstWinner  = document.getElementById('shared-first')?.value || '';
-    const lastWinner   = document.getElementById('shared-last')?.value  || '';
-    const bloodWinner  = document.getElementById('shared-blood')?.value || '';
-    const rampWinner   = document.getElementById('shared-ramp')?.value  || '';
-    const drawWinner   = document.getElementById('shared-draw')?.value  || '';
+    const matchComment  = document.getElementById('matchComment').value.trim();
+    const legendaryPlay = document.getElementById('legendaryPlay').value.trim();
+    const firstWinner       = document.getElementById('shared-first')?.value       || '';
+    const lastWinner        = document.getElementById('shared-last')?.value        || '';
+    const bloodWinner       = document.getElementById('shared-blood')?.value       || '';
+    const rampWinner        = document.getElementById('shared-ramp')?.value        || '';
+    const drawWinner        = document.getElementById('shared-draw')?.value        || '';
+    const interactionWinner = document.getElementById('shared-interaction')?.value || '';
+    const archEnemyWinner   = document.getElementById('shared-archenemy')?.value   || '';
+    const takenOutWinner    = document.getElementById('shared-takenout')?.value    || '';
 
     const batch = writeBatch(db);
     const matchParticipants = [];
+
+    for (const row of rows) {
+        const id = row.querySelector('.p-deck').value;
+        if (!getAllDecks().find(d => d.id === id)) {
+            const trigger = row.querySelector('.deck-trigger');
+            const deckName = trigger ? trigger.textContent.trim() : id;
+            alert(`The deck "${deckName}" no longer exists in the database. It may have been deleted. Please refresh and reselect.`);
+            return;
+        }
+    }
 
     rows.forEach(row => {
         const id       = row.querySelector('.p-deck').value;
@@ -221,11 +321,14 @@ async function submitMatch() {
         const playerName = deckObj.player;
 
         const funRating = parseInt(row.querySelector('.p-deck-enjoyment').value) || 0;
-        const isFirst   = firstWinner === playerName;
-        const isLast    = lastWinner  === playerName;
-        const isBlood   = bloodWinner === playerName;
-        const isRamp    = rampWinner  === playerName;
-        const isDraw    = drawWinner  === playerName;
+        const isFirst       = firstWinner       === playerName;
+        const isLast        = lastWinner        === playerName;
+        const isBlood       = bloodWinner       === playerName;
+        const isRamp        = rampWinner        === playerName;
+        const isDraw        = drawWinner        === playerName;
+        const isInteraction = interactionWinner === playerName;
+        const isArchEnemy   = archEnemyWinner   === playerName;
+        const isTakenOut    = takenOutWinner    === playerName;
 
         matchParticipants.push({
             deckId: id,
@@ -233,43 +336,64 @@ async function submitMatch() {
             deckName: deckObj.deckName,
             deckTags: deckObj.deckTags || [],
             funRating,
-            sol:      row.querySelector('.p-sol').checked,
-            mulligan: row.querySelector('.p-mulligan').checked,
-            blood: isBlood, ramp: isRamp, draw: isDraw,
-            first: isFirst, last: isLast,
+            sol:         row.querySelector('.p-sol').checked,
+            mulligan:    row.querySelector('.p-mulligan').checked,
+            snapkeep:    row.querySelector('.p-snapkeep').checked,
+            blood:       isBlood,       ramp:        isRamp,        draw:        isDraw,
+            first:       isFirst,       last:        isLast,
+            interaction: isInteraction, archenemy:   isArchEnemy,   takenout:    isTakenOut,
         });
 
         batch.update(doc(db, "decks", id), {
-            gamesPlayed:     increment(1),
-            funRatingTotal:  increment(funRating),
-            funRatingCount:  increment(funRating > 0 ? 1 : 0),
-            solRingOpening:  increment(row.querySelector('.p-sol').checked ? 1 : 0),
-            mulliganCount:   increment(row.querySelector('.p-mulligan').checked ? 1 : 0),
-            firstBloodCount: increment(isBlood ? 1 : 0),
-            mostRampCount:   increment(isRamp  ? 1 : 0),
-            mostDrawCount:   increment(isDraw  ? 1 : 0),
-            wentFirstCount:  increment(isFirst ? 1 : 0),
-            wentLastCount:   increment(isLast  ? 1 : 0),
+            gamesPlayed:          increment(1),
+            funRatingTotal:       increment(funRating),
+            funRatingCount:       increment(funRating > 0 ? 1 : 0),
+            solRingOpening:       increment(row.querySelector('.p-sol').checked ? 1 : 0),
+            mulliganCount:        increment(row.querySelector('.p-mulligan').checked ? 1 : 0),
+            snapKeepCount:        increment(row.querySelector('.p-snapkeep').checked ? 1 : 0),
+            firstBloodCount:      increment(isBlood       ? 1 : 0),
+            mostRampCount:        increment(isRamp        ? 1 : 0),
+            mostDrawCount:        increment(isDraw        ? 1 : 0),
+            wentFirstCount:       increment(isFirst       ? 1 : 0),
+            wentLastCount:        increment(isLast        ? 1 : 0),
+            mostInteractionCount: increment(isInteraction ? 1 : 0),
+            archEnemyCount:       increment(isArchEnemy   ? 1 : 0),
+            takenOutFirstCount:   increment(isTakenOut    ? 1 : 0),
         });
     });
 
     await batch.commit();
     await addDoc(collection(db, "matches"), {
-        timestamp:    serverTimestamp(),
-        participants: matchParticipants,
-        comment:      matchComment
+        timestamp:     serverTimestamp(),
+        participants:  matchParticipants,
+        comment:       matchComment,
+        legendaryPlay: legendaryPlay,
     });
 
     alert("Match Recorded!");
 
     // Reset
     document.getElementById('matchComment').value = '';
-    ['shared-first','shared-last','shared-blood','shared-ramp','shared-draw'].forEach(id => {
+    document.getElementById('legendaryPlay').value = '';
+    ['shared-first','shared-last','shared-blood','shared-ramp','shared-draw','shared-interaction','shared-archenemy','shared-takenout'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.selectedIndex = 0;
     });
     rows.forEach(row => {
         row.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
         row.querySelector('.p-deck-enjoyment').value = "0";
+        const enjoyTrigger = row.querySelector('.enjoy-trigger');
+        if (enjoyTrigger) {
+            enjoyTrigger.textContent      = 'Deck Enjoyment';
+            enjoyTrigger.style.color      = '';
+            enjoyTrigger.style.borderColor = '';
+        }
+        const deckTrigger = row.querySelector('.deck-trigger');
+        if (deckTrigger) {
+            row.querySelector('.p-deck').value = '';
+            deckTrigger.textContent       = 'Deck...';
+            deckTrigger.style.color       = 'var(--text-dim)';
+            deckTrigger.style.borderColor = 'var(--border)';
+        }
     });
 }

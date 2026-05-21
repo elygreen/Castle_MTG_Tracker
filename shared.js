@@ -131,13 +131,13 @@ export const TAG_COLORS = {
     "Combo":          "#ffeb3b", "Control":      "#2196f3",
     "Group Hug":      "#8bc34a", "Lands":        "#14a35c",
     "Lifegain":       "#fc79a4", "Midrange":     "#ff9800",
-    "Mill":           "#3f51b5", "Reanimator":   "#212121",
+    "Mill":           "#3f51b5", "Reanimator":   "#7b5ea7",
     "Spellslinger":   "#03a9f4", "Stax":         "#856b69",
     "Tokens":         "#ffc107", "Tribal":       "#cddc39",
     "Voltron":        "#ac0505", "+1/+1 Counters": "#009688",
     "Mono Color":     "#9e9e9e", "Budget":       "#43a047",
     "Recursion":      "#673ab7", "Go Wide":      "#fdd835",
-    "Goad":           "#e53935", "Graveyard":    "#464646ff",
+    "Goad":           "#e53935", "Graveyard":    "#8d9b8a",
     "Enchantress":    "#ab47bc", "Storm":        "#1e88e5",
     "Theft":          "#f4511e"
 };
@@ -161,6 +161,17 @@ export const getColorPips = (identity) => {
     if (!identity || identity.length === 0) return '';
     const pipMap = { W: '⚪', U: '🔵', B: '⚫', R: '🔴', G: '🟢' };
     return identity.map(c => pipMap[c] || '').join('');
+};
+
+export const getColorPipsHtml = (identity) => {
+    if (!identity || identity.length === 0) return '';
+    const colorMap = { W: '#f9faf4', U: '#2196f3', B: '#2a2a2a', R: '#e53935', G: '#43a047' };
+    const borderMap = { W: '#ccc',    U: '#1565c0', B: '#555',    R: '#b71c1c', G: '#2e7d32' };
+    return identity.map(c => {
+        const bg  = colorMap[c]  || '#888';
+        const bd  = borderMap[c] || '#555';
+        return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${bg};border:1px solid ${bd};margin-right:1px;vertical-align:middle;"></span>`;
+    }).join('');
 };
 
 export const getTagStyle = (tag) => {

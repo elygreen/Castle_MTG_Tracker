@@ -232,6 +232,10 @@ export function updateRosterView(playerName) {
     decks.forEach(d => {
         const li = document.createElement('li');
         li.className = 'roster-deck-item';
+        if (d.commanderImage) {
+            li.style.setProperty('--commander-art', `url(${d.commanderImage})`);
+            li.classList.add('has-commander-art');
+        }
         li.innerHTML = `
             <div class="roster-deck-content">
                 <div class="roster-deck-info">
@@ -261,7 +265,7 @@ function _syncPlayerSelect(players) {
     const playerSelect = document.getElementById('playerSelect');
     playerSelect.innerHTML = '<option value="" disabled selected>Owner...</option>';
     players.forEach(p => {
-        playerSelect.innerHTML += `<option value="${p.name}">${p.name}</option>`;
+        playerSelect.innerHTML += `<option value="${p.name}" style="color:${p.color}; font-weight:800;">${p.name}</option>`;
     });
 }
 

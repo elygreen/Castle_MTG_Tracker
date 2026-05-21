@@ -44,6 +44,12 @@
                         <select id="shared-blood" class="shared-stat-select blood-select"><option value="">Select a user...</option></select>
                     </div>
                     <div class="shared-stat-group">
+                        <label class="shared-stat-label pill-takenout-label">Taken Out First</label>
+                        <select id="shared-takenout" class="shared-stat-select takenout-select"><option value="">Select a user...</option></select>
+                    </div>
+                </div>
+                <div class="shared-stats-row" style="margin-top: 8px;">
+                    <div class="shared-stat-group">
                         <label class="shared-stat-label pill-ramp-label">Most Ramp</label>
                         <select id="shared-ramp" class="shared-stat-select ramp-select"><option value="">Select a user...</option></select>
                     </div>
@@ -51,12 +57,25 @@
                         <label class="shared-stat-label pill-draw-label">Most Card Draw</label>
                         <select id="shared-draw" class="shared-stat-select draw-select"><option value="">Select a user...</option></select>
                     </div>
+                    <div class="shared-stat-group">
+                        <label class="shared-stat-label pill-interaction-label">Most Interaction</label>
+                        <select id="shared-interaction" class="shared-stat-select interaction-select"><option value="">Select a user...</option></select>
+                    </div>
+                    <div class="shared-stat-group">
+                        <label class="shared-stat-label pill-archenemy-label">Arch Enemy</label>
+                        <select id="shared-archenemy" class="shared-stat-select archenemy-select"><option value="">Select a user...</option></select>
+                    </div>
                 </div>
             </div>
 
             <div style="margin-top: 15px;">
                 <label style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 5px;">Match Comments</label>
                 <textarea id="matchComment" placeholder="Anything note worthy?" style="width: 100%; min-height: 80px; box-sizing: border-box;"></textarea>
+            </div>
+
+            <div style="margin-top: 15px;">
+                <label style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 5px;">Legendary Plays</label>
+                <textarea id="legendaryPlay" placeholder="Any legendary plays that you don't see every day?" style="width: 100%; min-height: 80px; box-sizing: border-box;"></textarea>
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 10px;">

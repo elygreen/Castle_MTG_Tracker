@@ -49,14 +49,22 @@ export function buildHistoryCard(match, matchId, getPlayerColor, getTagStyle) {
                         </div>
                     </div>
                     <div class="history-stats">
-                        ${p.funRating > 0  ? `<div class="stat-badge-pill pill-enjoyment">ENJOYMENT ★ <b>${p.funRating}</b></div>` : ''}
-                        ${p.sol            ? `<div class="stat-badge-pill pill-sol">SOL RING</div>`       : ''}
+                        ${p.funRating > 0  ? (() => {
+                            const enjoyColors = [null,'#c0392b','#d44e1f','#e06b1a','#d4842a','#b89e30','#8fb335','#62c040','#36cc50','#18d464','#10d275'];
+                            const c = enjoyColors[p.funRating] || '#888';
+                            return `<div class="stat-badge-pill" style="background:${c}22; color:${c}; border:1px solid ${c}44;">ENJOYMENT ★ <b>${p.funRating}</b></div>`;
+                        })() : ''}
+                        ${p.sol            ? `<div class="stat-badge-pill pill-sol">SOL RING</div>`          : ''}
                         ${p.mulligan       ? `<div class="stat-badge-pill pill-mulligan">2+ MULLIGANS</div>` : ''}
-                        ${p.blood          ? `<div class="stat-badge-pill pill-blood">FIRST BLOOD</div>`  : ''}
-                        ${p.ramp           ? `<div class="stat-badge-pill pill-ramp">MOST RAMP</div>`     : ''}
-                        ${p.draw           ? `<div class="stat-badge-pill pill-draw">MOST DRAW</div>`     : ''}
-                        ${p.first          ? `<div class="stat-badge-pill pill-first">1ST</div>`          : ''}
-                        ${p.last           ? `<div class="stat-badge-pill pill-last">LAST</div>`          : ''}
+                        ${p.snapkeep       ? `<div class="stat-badge-pill pill-snapkeep">SNAP KEEP</div>`    : ''}
+                        ${p.blood          ? `<div class="stat-badge-pill pill-blood">FIRST BLOOD</div>`     : ''}
+                        ${p.ramp           ? `<div class="stat-badge-pill pill-ramp">MOST RAMP</div>`        : ''}
+                        ${p.draw           ? `<div class="stat-badge-pill pill-draw">MOST DRAW</div>`        : ''}
+                        ${p.first          ? `<div class="stat-badge-pill pill-first">1ST</div>`             : ''}
+                        ${p.last           ? `<div class="stat-badge-pill pill-last">LAST</div>`             : ''}
+                        ${p.interaction    ? `<div class="stat-badge-pill pill-interaction">MOST INTERACTION</div>` : ''}
+                        ${p.archenemy      ? `<div class="stat-badge-pill pill-archenemy">ARCH ENEMY</div>`  : ''}
+                        ${p.takenout       ? `<div class="stat-badge-pill pill-takenout">TAKEN OUT FIRST</div>` : ''}
                     </div>
                 </div>
             `).join('')}
@@ -65,6 +73,13 @@ export function buildHistoryCard(match, matchId, getPlayerColor, getTagStyle) {
                 <div class="history-comment-box">
                     <span class="history-comment-label">Match Notes</span>
                     <div class="history-comment-text">"${match.comment}"</div>
+                </div>
+            ` : ''}
+
+            ${match.legendaryPlay ? `
+                <div class="history-comment-box">
+                    <span class="history-comment-label">⚡ Legendary Play</span>
+                    <div class="history-comment-text">"${match.legendaryPlay}"</div>
                 </div>
             ` : ''}
         </div>

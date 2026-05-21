@@ -6,6 +6,74 @@
     <title>Castle MTG — Database</title>
     <link rel="icon" type="image/x-icon" href="castleicon.ico">
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Custom bracket dropdown */
+        .bracket-dropdown-wrapper {
+            position: relative;
+            margin-bottom: 10px;
+        }
+        .bracket-dropdown-trigger {
+            width: 100%;
+            background: #121416;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            user-select: none;
+            box-sizing: border-box;
+        }
+        .bracket-dropdown-trigger:hover {
+            border-color: rgba(255,255,255,0.2);
+        }
+        .bracket-dropdown-trigger.open {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(61,133,255,0.15);
+        }
+        .bracket-dropdown-trigger .chevron {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            transition: transform 0.15s ease;
+        }
+        .bracket-dropdown-trigger.open .chevron {
+            transform: rotate(180deg);
+        }
+        .bracket-dropdown-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: #1a1d20;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 100;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+        }
+        .bracket-dropdown-menu.open {
+            display: block;
+        }
+        .bracket-option {
+            padding: 9px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.1s ease;
+        }
+        .bracket-option:hover {
+            background: rgba(255,255,255,0.07);
+        }
+        .bracket-option.placeholder {
+            color: var(--text-dim);
+            font-weight: 400;
+        }
+    </style>
 </head>
 <body data-page="database">
     <div class="container" style="max-width: 950px;">
@@ -24,7 +92,7 @@
         <div class="manage-grid">
             <div class="manage-col">
                 <section class="card">
-                    <h2>Add Player</h2>
+                    <h2 style="font-size: 1.2rem; margin-top: 0; margin-bottom: 16px; text-transform: capitalize; color: var(--text-main); letter-spacing: normal;">Add Player</h2>
                     <div class="input-group" style="flex-direction: column; gap: 15px;">
                         <div style="display: flex; gap: 10px;">
                             <input type="text" id="newPlayerName" placeholder="Name (e.g. Ely)" style="margin:0;">
@@ -35,23 +103,45 @@
                 </section>
 
                 <section class="card">
-                    <h2>Add Deck</h2>
+                    <h2 style="font-size: 1.2rem; margin-top: 0; margin-bottom: 16px; text-transform: capitalize; color: var(--text-main); letter-spacing: normal;">Add Deck</h2>
                     <div class="input-group" style="flex-direction: column;">
                         <select id="playerSelect"><option value="" disabled selected>Owner...</option></select>
                         <input type="text" id="deckName" placeholder="Deck Title" style="margin-bottom: 10px;">
-                        <input type="text" id="commanderName" placeholder="Commander Name (e.g. Attrax)" style="margin-bottom: 10px;">
-                        <select id="deckBracket" style="margin-bottom: 10px;">
+                        <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                            <input type="text" id="commanderName" placeholder="Commander Name (e.g. Attrax)" style="margin: 0; flex: 1;">
+                            <button id="fetchCommanderBtn" class="btn-blue" style="flex: none; padding: 0 14px;">Search</button>
+                        </div>
+                        <div id="commanderPreviewStrip" style="display:none; align-items: center; gap: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 10px; height: 56px;">
+                            <img id="commanderPreviewArt" src="" style="height: 56px; width: 100px; object-fit: cover; object-position: center 20%; flex-shrink: 0;">
+                            <span id="commanderPreviewName" style="font-size: 0.8rem; font-weight: 700; color: white;"></span>
+                        </div>
+                        <div id="commanderPreviewError" style="display:none; font-size: 0.75rem; color: var(--danger); margin-bottom: 8px;"></div>
+
+                        <!-- Custom bracket dropdown -->
+                        <div class="bracket-dropdown-wrapper">
+                            <div class="bracket-dropdown-trigger" id="bracketTrigger">
+                                <span id="bracketLabel">Power Bracket...</span>
+                                <span class="chevron">▼</span>
+                            </div>
+                            <div class="bracket-dropdown-menu" id="bracketMenu">
+                                <div class="bracket-option placeholder" data-value="">Power Bracket...</div>
+                                <div class="bracket-option" data-value="1">1</div>
+                                <div class="bracket-option" data-value="2">2</div>
+                                <div class="bracket-option" data-value="3">3</div>
+                                <div class="bracket-option" data-value="4">4</div>
+                                <div class="bracket-option" data-value="5">cEDH</div>
+                            </div>
+                        </div>
+                        <!-- Hidden select keeps compatibility with database.js logic -->
+                        <select id="deckBracket" style="display:none;">
                             <option value="" disabled selected>Power Bracket...</option>
                             <option value="1">1</option>
-                            <option value="1.5">1+</option>
                             <option value="2">2</option>
-                            <option value="2.5">2+</option>
                             <option value="3">3</option>
-                            <option value="3.5">3+</option>
                             <option value="4">4</option>
-                            <option value="4.5">4+</option>
                             <option value="5">cEDH</option>
                         </select>
+
                         <button id="toggleTagsBtn" type="button" class="btn-blue">+ Add Tags</button>
                         <div id="tagSelectorContainer" class="tag-selector-hidden">
                             <div id="tagSelector" class="tag-selector-grid"></div>
@@ -63,7 +153,7 @@
 
             <div class="manage-col">
                 <section class="card roster-card">
-                    <h2>Player Roster</h2>
+                    <h2 style="font-size: 1.2rem; margin-top: 0; margin-bottom: 16px; text-transform: capitalize; color: var(--text-main); letter-spacing: normal;">Player Roster</h2>
                     <div id="rosterTabs" class="roster-tabs"></div>
                     <div id="rosterDeckList" class="roster-deck-view">
                         <p style="color: var(--text-dim); font-size: 0.8rem; text-align: center;">Select a player to view their decks.</p>
@@ -83,5 +173,109 @@
     </div>
 
     <script type="module" src="database_page.js"></script>
+
+    <script>
+        const BRACKET_COLORS = {
+            "1": "#9c27b0", "1.5": "#9c27b0",
+            "2": "#3d85ff", "2.5": "#3d85ff",
+            "3": "#4caf50", "3.5": "#4caf50",
+            "4": "#ff7b00", "4.5": "#ff7b00",
+            "5": "#ff4444"
+        };
+
+        const trigger  = document.getElementById('bracketTrigger');
+        const menu     = document.getElementById('bracketMenu');
+        const label    = document.getElementById('bracketLabel');
+        const hidden   = document.getElementById('deckBracket');
+
+        trigger.addEventListener('click', () => {
+            trigger.classList.toggle('open');
+            menu.classList.toggle('open');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!trigger.contains(e.target) && !menu.contains(e.target)) {
+                trigger.classList.remove('open');
+                menu.classList.remove('open');
+            }
+        });
+
+        // Commander preview fetch
+        let _fetchedCommanderData = null;
+
+        document.getElementById('fetchCommanderBtn').addEventListener('click', async () => {
+            const input = document.getElementById('commanderName').value.trim();
+            const strip = document.getElementById('commanderPreviewStrip');
+            const art   = document.getElementById('commanderPreviewArt');
+            const name  = document.getElementById('commanderPreviewName');
+            const err   = document.getElementById('commanderPreviewError');
+
+            if (!input) return;
+
+            strip.style.display = 'none';
+            err.style.display   = 'none';
+            name.textContent    = 'Searching…';
+            name.style.color    = 'var(--text-dim)';
+            strip.style.display = 'flex';
+            _fetchedCommanderData = null;
+
+            try {
+                const res = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(input)}`);
+                if (res.ok) {
+                    const card = await res.json();
+                    const isDoubleFaced = card.card_faces && !card.image_uris;
+                    const frontFace = isDoubleFaced ? card.card_faces[0] : card;
+                    const artUrl = frontFace.image_uris?.art_crop || '';
+
+                    _fetchedCommanderData = {
+                        name: card.name,
+                        image: artUrl,
+                        colorIdentity: card.color_identity || []
+                    };
+
+                    art.src             = artUrl;
+                    art.style.display   = artUrl ? 'block' : 'none';
+                    name.textContent    = '✓ ' + card.name;
+                    name.style.color    = '#4caf50';
+                    document.getElementById('commanderName').value = card.name;
+                } else {
+                    strip.style.display = 'none';
+                    err.textContent     = '✕ Card not found — check the spelling and try again.';
+                    err.style.display   = 'block';
+                }
+            } catch (e) {
+                strip.style.display = 'none';
+                err.textContent     = '✕ Network error — could not reach Scryfall.';
+                err.style.display   = 'block';
+            }
+        });
+
+        // Clear preview when user edits the input manually
+        document.getElementById('commanderName').addEventListener('input', () => {
+            _fetchedCommanderData = null;
+            document.getElementById('commanderPreviewStrip').style.display = 'none';
+            document.getElementById('commanderPreviewError').style.display = 'none';
+        });
+
+        menu.querySelectorAll('.bracket-option').forEach(opt => {
+            const val = opt.dataset.value;
+            const color = BRACKET_COLORS[val];
+            if (color) opt.style.color = color;
+
+            opt.addEventListener('click', () => {
+                const selectedColor = BRACKET_COLORS[val];
+
+                label.textContent = opt.textContent;
+                label.style.color = selectedColor || 'var(--text-dim)';
+
+                // Sync the hidden native select so database.js reads the right value
+                hidden.value = val;
+                hidden.dispatchEvent(new Event('change'));
+
+                trigger.classList.remove('open');
+                menu.classList.remove('open');
+            });
+        });
+    </script>
 </body>
 </html>

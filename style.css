@@ -20,6 +20,10 @@
     --clr-last: #795548;
     --clr-draw-alt: #607d8b;
     --clr-mulligan: #ff7b00;
+    --clr-interaction: #00bcd4;
+    --clr-archenemy: #e91e63;
+    --clr-takenout: #546e7a;
+    --clr-snapkeep: #7c4dff;
 }
 
 html {
@@ -124,6 +128,10 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
 .pill-first { background: var(--clr-first); }
 .pill-last { background: var(--clr-last); }
 .pill-mulligan { background: var(--clr-mulligan); }
+.pill-interaction { background: var(--clr-interaction); }
+.pill-archenemy { background: var(--clr-archenemy); }
+.pill-takenout { background: var(--clr-takenout); }
+.pill-snapkeep { background: var(--clr-snapkeep); }
 
 /* Roster UI Enhancements */
 .roster-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
@@ -378,6 +386,146 @@ button:active { filter: brightness(0.9); transform: translateY(0); box-shadow: n
     transition: all 0.2s ease;
 }
 
+.input-group-main .p-owner {
+    flex: 1;
+}
+
+.input-group-main .deck-dropdown {
+    flex: 2.5;
+}
+
+.input-group-main .enjoy-dropdown {
+    flex: 1.5;
+}
+
+.input-group-main select:hover {
+    border-color: rgba(255,255,255,0.25);
+    background: #1a1d20;
+}
+
+/* Custom enjoyment dropdown */
+.enjoy-dropdown {
+    position: relative;
+    flex: 1;
+}
+
+/* Custom deck dropdown */
+.deck-dropdown {
+    position: relative;
+    flex: 1;
+}
+
+.deck-trigger {
+    padding: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #121416;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+}
+
+.deck-trigger:hover {
+    border-color: rgba(255,255,255,0.25);
+    background: #1a1d20;
+}
+
+.deck-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    min-width: 180px;
+    background: #1e2124;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.deck-menu.open {
+    display: block;
+}
+
+.deck-option {
+    padding: 7px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    color: white;
+    transition: background 0.1s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.deck-option-name {
+    vertical-align: middle;
+}
+
+.deck-option:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.enjoy-trigger {
+    padding: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #121416;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+}
+
+.enjoy-trigger:hover {
+    border-color: rgba(255,255,255,0.25);
+    background: #1a1d20;
+}
+
+.enjoy-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #1e2124;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.enjoy-menu.open {
+    display: block;
+}
+
+.enjoy-option {
+    padding: 7px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.1s ease;
+}
+
+.enjoy-option:hover {
+    background: rgba(255,255,255,0.08);
+}
+
 .remove-participant {
     background: none;
     color: var(--danger);
@@ -435,11 +583,12 @@ button:active { filter: brightness(0.9); transform: translateY(0); box-shadow: n
 .pill-last:has(input:checked) { background: var(--clr-last) !important; border-color: rgba(255,255,255,0.3); }
 .pill-sol:has(input:checked) { background: var(--clr-sol) !important; color: #000; border-color: rgba(0,0,0,0.2); }
 .pill-mulligan:has(input:checked) { background: var(--clr-mulligan) !important; border-color: rgba(255,255,255,0.3); }
+.pill-snapkeep:has(input:checked) { background: var(--clr-snapkeep) !important; border-color: rgba(255,255,255,0.3); }
 
 /* Shared Match Awards Section */
 .shared-stats-row {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
     gap: 8px;
 }
 
@@ -464,6 +613,9 @@ button:active { filter: brightness(0.9); transform: translateY(0); box-shadow: n
 .pill-blood-label  { background: var(--clr-blood);  color: white; }
 .pill-ramp-label   { background: var(--clr-ramp);   color: white; }
 .pill-draw-label   { background: var(--clr-draw);   color: white; }
+.pill-interaction-label { background: var(--clr-interaction); color: white; }
+.pill-archenemy-label   { background: var(--clr-archenemy);   color: white; }
+.pill-takenout-label    { background: var(--clr-takenout);    color: white; }
 
 .shared-stat-select {
     padding: 6px 8px;
@@ -487,6 +639,9 @@ button:active { filter: brightness(0.9); transform: translateY(0); box-shadow: n
 .blood-select:focus { border-color: var(--clr-blood); outline: none; }
 .ramp-select:focus  { border-color: var(--clr-ramp);  outline: none; }
 .draw-select:focus  { border-color: var(--clr-draw);  outline: none; }
+.interaction-select:focus { border-color: var(--clr-interaction); outline: none; }
+.archenemy-select:focus   { border-color: var(--clr-archenemy);   outline: none; }
+.takenout-select:focus    { border-color: var(--clr-takenout);    outline: none; }
 
 .blood-select:not([value=""]):not(:has(option[value=""]:checked)) { border-color: var(--clr-blood); }
 .ramp-select:not([value=""]):not(:has(option[value=""]:checked))  { border-color: var(--clr-ramp);  }
@@ -710,4 +865,24 @@ body.role-user #addParticipantBtn { display: none !important; }
 }
 .modal-actions button:active {
     transform: translateY(0);
+}
+/* Roster deck items — commander art background (mirrors .deck-card::before) */
+.roster-deck-item.has-commander-art {
+    position: relative;
+    overflow: hidden;
+}
+.roster-deck-item.has-commander-art::before {
+    content: "";
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    background-image: var(--commander-art);
+    background-size: cover;
+    background-position: center 20%;
+    opacity: 0.15;
+    z-index: 0;
+    pointer-events: none;
+}
+.roster-deck-item.has-commander-art .roster-deck-content {
+    position: relative;
+    z-index: 1;
 }
