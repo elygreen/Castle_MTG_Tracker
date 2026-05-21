@@ -67,22 +67,7 @@ export function buildStandingsCard(
             <div class="deck-header">
                 <div>
                     <h3 style="margin:0; font-size:1.1rem;">
-                        ${deck.deckName}
-                        <span style="
-                            font-size: 0.65rem;
-                            color: white;
-                            background: ${BRACKET_COLORS[deck.bracket] || 'var(--accent)'};
-                            padding: 2px 6px;
-                            border-radius: 4px;
-                            font-weight: 800;
-                            margin-left: 8px;
-                            text-transform: uppercase;
-                        ">
-                            ${formatBracket(deck.bracket)}
-                        </span>
-                        <span style="margin-left: 5px; font-size: 0.9rem; letter-spacing: -2px;">
-                            ${getColorPips(deck.colorIdentity)}
-                        </span>
+                        <span style="font-size: 0.9rem; letter-spacing: -2px; margin-right: 6px;">${getColorPips(deck.colorIdentity)}</span>${deck.deckName}<span style="font-size: 0.65rem; color: white; background: ${BRACKET_COLORS[deck.bracket] || 'var(--accent)'}; padding: 2px 6px; border-radius: 4px; font-weight: 800; margin-left: 8px; text-transform: uppercase;">${formatBracket(deck.bracket)}</span>
                     </h3>
                     <div style="color:${getPlayerColor(deck.player)}; font-size:0.75rem; margin-top:2px; font-weight:800; text-transform:uppercase; letter-spacing: 0.5px;">
                         ${deck.player}
