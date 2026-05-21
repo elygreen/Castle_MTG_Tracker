@@ -137,39 +137,58 @@ export function renderInsightTab() {
 
     detailContainer.innerHTML = `
         <div class="card" style="margin-bottom: 15px; padding: 18px; border-left: 5px solid ${playerColor}; background: linear-gradient(90deg, var(--surface) 0%, rgba(0,0,0,0.2) 100%);">
-            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-                <div style="flex: 1; min-width: 220px;">
+            <!-- Player name + archidekt row -->
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+                <div>
                     <h1 style="margin: 0; font-size: 2rem; font-weight: 900; color: ${playerColor}; text-transform: uppercase; letter-spacing: -1px;">${selectedInsightPlayer}</h1>
                     <p style="margin: 2px 0 0; color: var(--text-dim); font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Overall Performance</p>
-                    ${archidektUrl ? `
-                    <a href="${archidektUrl}" target="_blank" rel="noopener noreferrer"
-                       style="display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 6px 14px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: var(--text-main); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; text-decoration: none; transition: background 0.15s ease, border-color 0.15s ease;"
-                       onmouseover="this.style.background='rgba(255,255,255,0.13)'; this.style.borderColor='rgba(255,255,255,0.3)';"
-                       onmouseout="this.style.background='rgba(255,255,255,0.07)'; this.style.borderColor='rgba(255,255,255,0.15)';">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                        Archidekt Profile
-                    </a>` : ''}
-                    <div class="stat-badges" style="margin-top: 12px; background: rgba(0,0,0,0.3); padding: 10px; gap: 8px;">
-                        <div class="stat-badge-pill pill-sol">SOL RING <b>${playerStats.sol}</b></div>
-                        <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${playerStats.blood}</b></div>
-                        <div class="stat-badge-pill pill-ramp">MOST RAMP <b>${playerStats.ramp}</b></div>
-                        <div class="stat-badge-pill pill-draw">MOST DRAW <b>${playerStats.draw}</b></div>
-                        <div class="stat-badge-pill pill-interaction">MOST INTERACTION <b>${playerStats.interaction}</b></div>
-                        <div class="stat-badge-pill pill-first">WENT FIRST <b>${playerStats.first}</b></div>
-                        <div class="stat-badge-pill pill-last">WENT LAST <b>${playerStats.last}</b></div>
-                        <div class="stat-badge-pill pill-mulligan">2+ MULLIGANS <b>${playerStats.mulligan}</b></div>
-                        <div class="stat-badge-pill pill-snapkeep">SNAP KEEP <b>${playerStats.snapkeep}</b></div>
-                        <div class="stat-badge-pill pill-archenemy">ARCH ENEMY <b>${playerStats.archenemy}</b></div>
-                        <div class="stat-badge-pill pill-takenout">TAKEN OUT FIRST <b>${playerStats.takenout}</b></div>
+                </div>
+                ${archidektUrl ? `
+                <a href="${archidektUrl}" target="_blank" rel="noopener noreferrer"
+                   style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: var(--text-main); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; text-decoration: none; transition: background 0.15s ease, border-color 0.15s ease;"
+                   onmouseover="this.style.background='rgba(255,255,255,0.13)'; this.style.borderColor='rgba(255,255,255,0.3)';"
+                   onmouseout="this.style.background='rgba(255,255,255,0.07)'; this.style.borderColor='rgba(255,255,255,0.15)';">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    Archidekt Profile
+                </a>` : ''}
+            </div>
+            <!-- Stats + pie charts row -->
+            <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+                <!-- Two-column stat grid -->
+                <div style="flex: 1; min-width: 300px; background: rgba(0,0,0,0.3); border-radius: 8px; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr;">
+                    ${[
+                        { label: 'Sol Ring',         value: playerStats.sol,         color: '#ffcc00' },
+                        { label: 'First Blood',      value: playerStats.blood,        color: '#ff4444' },
+                        { label: 'Most Ramp',        value: playerStats.ramp,         color: '#4caf50' },
+                        { label: 'Most Draw',        value: playerStats.draw,         color: '#2196f3' },
+                        { label: 'Most Interaction', value: playerStats.interaction,  color: '#00bcd4' },
+                        { label: 'Went First',       value: playerStats.first,        color: '#9c27b0' },
+                        { label: 'Went Last',        value: playerStats.last,         color: '#795548' },
+                        { label: '2+ Mulligans',     value: playerStats.mulligan,     color: '#ff7b00' },
+                        { label: 'Snap Keep',        value: playerStats.snapkeep,     color: '#7c4dff' },
+                        { label: 'Arch Enemy',       value: playerStats.archenemy,    color: '#e91e63' },
+                        { label: 'Taken Out First',  value: playerStats.takenout,     color: '#546e7a' },
+                        null,
+                    ].map((s, i) => s ? `
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; background: ${Math.floor(i / 2) % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'};">
+                            <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${s.color}; flex-shrink: 0;"></span>
+                                <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); white-space: nowrap;">${s.label}</span>
+                            </div>
+                            <span style="font-size: 1rem; font-weight: 900; color: var(--text-main); margin-left: 8px;">${s.value}</span>
+                        </div>
+                    ` : '<div style="background: rgba(255,255,255,0.02);"></div>').join('')}
+                </div>
+                <!-- Pie charts stacked on the right -->
+                <div style="display: flex; flex-direction: column; gap: 16px; min-width: 150px;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                        <label style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; font-weight:800; letter-spacing:1px;">Deck Color Identity</label>
+                        <div style="height: 140px; width: 150px; position: relative;"><canvas id="colorPieChart"></canvas></div>
                     </div>
-                </div>
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 150px;">
-                    <label style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; font-weight:800; letter-spacing:1px;">Deck Color Identity</label>
-                    <div style="height: 140px; width: 100%; position: relative;"><canvas id="colorPieChart"></canvas></div>
-                </div>
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 150px;">
-                    <label style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; font-weight:800; letter-spacing:1px;">Play % Color Identity</label>
-                    <div style="height: 140px; width: 100%; position: relative;"><canvas id="playRatePieChart"></canvas></div>
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                        <label style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; font-weight:800; letter-spacing:1px;">Play % Color Identity</label>
+                        <div style="height: 140px; width: 150px; position: relative;"><canvas id="playRatePieChart"></canvas></div>
+                    </div>
                 </div>
             </div>
         </div>
