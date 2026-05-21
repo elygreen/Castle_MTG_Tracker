@@ -107,7 +107,15 @@ export function renderInsightTab() {
         return;
     }
 
-    const playerDecks = allDecks.filter(d => d.player === selectedInsightPlayer);
+    const playerDecks = allDecks
+        .filter(d => d.player === selectedInsightPlayer)
+        .sort((a, b) => {
+            const aIsMisc = (a.deckName || '').toLowerCase() === 'misc';
+            const bIsMisc = (b.deckName || '').toLowerCase() === 'misc';
+            if (aIsMisc && !bIsMisc) return 1;
+            if (bIsMisc && !aIsMisc) return -1;
+            return 0;
+        });
     const playerColor = _getPlayerColor(selectedInsightPlayer);
 
     const playerStats = playerDecks.reduce((acc, d) => ({
@@ -152,6 +160,7 @@ export function renderInsightTab() {
                     const total   = deck.gamesPlayed || ((deck.wins || 0) + (deck.losses || 0)) || 0;
                     const bgArt   = deck.commanderImage ? `url(${deck.commanderImage})` : 'none';
                     const calcPct = (val) => total > 0 ? ` (${((val / total) * 100).toFixed(0)}%)` : ' (0%)';
+                    const isMisc  = (deck.deckName || '').toLowerCase() === 'misc';
                     return `
                         <div class="deck-card ${deck.id === selectedInsightDeckId ? 'selected' : ''}"
                              onclick="selectInsightDeck('${deck.id}')"
@@ -160,11 +169,9 @@ export function renderInsightTab() {
                                 <div style="display: flex; align-items: flex-start; justify-content: space-between; width: 100%;">
                                     <div>
                                         <h3 style="margin:0; font-size:1.5rem; display: flex; align-items: center; gap: 8px;">
-                                            <span style="font-size: 1.2rem; letter-spacing: -3px;">${_getColorPips(deck.colorIdentity)}</span>
+                                            ${isMisc ? '' : `<span style="font-size: 1.2rem; letter-spacing: -3px;">${_getColorPips(deck.colorIdentity)}</span>`}
                                             ${deck.deckName}
-                                            <span style="font-size: 1.0rem; color: white; background: ${_BRACKET_COLORS[deck.bracket] || 'var(--accent)'}; padding: 1px 5px; border-radius: 4px;">
-                                                ${_formatBracket(deck.bracket)}
-                                            </span>
+                                            ${isMisc ? '' : `<span style="font-size: 1.0rem; color: white; background: ${_BRACKET_COLORS[deck.bracket] || 'var(--accent)'}; padding: 1px 5px; border-radius: 4px;">${_formatBracket(deck.bracket)}</span>`}
                                         </h3>
                                         <div class="deck-tags-grid" style="margin-top: 5px;">
                                             ${(deck.deckTags || []).map(t => `<span class="individual-tag" style="${_getTagStyle(t)}">${t}</span>`).join('')}
@@ -229,7 +236,13 @@ function initBarChart(decks, stat = 'gamesPlayed') {
         return deck[stat] || 0;
     };
 
-    const sortedDecks = [...decks].sort((a, b) => getValue(b) - getValue(a));
+    const sortedDecks = [...decks].sort((a, b) => {
+        const aIsMisc = (a.deckName || '').toLowerCase() === 'misc';
+        const bIsMisc = (b.deckName || '').toLowerCase() === 'misc';
+        if (aIsMisc && !bIsMisc) return 1;
+        if (bIsMisc && !aIsMisc) return -1;
+        return getValue(b) - getValue(a);
+    });
     const dataLabels  = sortedDecks.map(d => d.deckName);
     const dataValues  = sortedDecks.map(d => getValue(d));
 
