@@ -277,34 +277,45 @@ button:active { filter: brightness(0.9); transform: translateY(0); box-shadow: n
     margin-bottom: 10px; 
 }
 
-/* style.css - around line 214 */
-.tag-checkbox { 
-    font-size: 0.75rem; 
-    color: var(--text-dim); 
-    display: flex; 
-    justify-content: space-between;
-    align-items: center; 
+/* Tag checkboxes — clear selected vs unselected states */
+.tag-checkbox {
+    font-size: 0.75rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     cursor: pointer;
     padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.03);
     border-radius: 6px;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
     width: 100%;
     box-sizing: border-box;
+    /* Unselected: dim, low contrast */
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-dim);
+    opacity: 0.55;
+    font-weight: 800;
 }
 .tag-checkbox:hover {
-    background: rgba(255,255,255,0.08);
+    opacity: 0.85;
+    background: rgba(255,255,255,0.07);
     color: var(--text-main);
+}
+/* Selected state — driven by JS adding .tag-checked class */
+.tag-checkbox.tag-checked {
+    opacity: 1;
+    color: #fff !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 .tag-checkbox span {
     flex: 1;
-    text-align: left;
+    text-align: center;
 }
 .tag-checkbox input[type="checkbox"] {
     margin: 0;
     margin-left: 8px;
     cursor: pointer;
     flex-shrink: 0;
+    accent-color: currentColor;
 }
 .tag-selector-hidden { display: none; }
 .tag-selector-visible { display: block; }

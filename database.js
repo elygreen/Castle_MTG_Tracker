@@ -83,20 +83,26 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
         tagSelector.innerHTML = allTags.map(tag => {
             const color = TAG_COLORS[tag] || 'var(--text-dim)';
             return `
-                <label class="tag-checkbox" style="border: 1px solid ${color}44; background: ${color}18;"
-                       data-color="${color}">
-                    <span style="color: ${color}; font-weight: 800;">${tag}</span>
+                <label class="tag-checkbox" style="border: 1px solid ${color}33;" data-color="${color}">
+                    <span style="color: ${color};">${tag}</span>
                     <input type="checkbox" value="${tag}" style="display:none;">
                 </label>`;
         }).join('');
 
-        // Highlight fully on check
+        // Toggle .tag-checked for clear selected vs unselected visual
         tagSelector.querySelectorAll('.tag-checkbox').forEach(label => {
             const color = label.dataset.color;
             const cb    = label.querySelector('input');
             cb.addEventListener('change', () => {
-                label.style.background    = cb.checked ? color + '44' : color + '18';
-                label.style.borderColor   = cb.checked ? color : color + '44';
+                if (cb.checked) {
+                    label.classList.add('tag-checked');
+                    label.style.background  = color + '55';
+                    label.style.borderColor = color;
+                } else {
+                    label.classList.remove('tag-checked');
+                    label.style.background  = '';
+                    label.style.borderColor = color + '33';
+                }
             });
         });
 
@@ -390,12 +396,27 @@ function handleEditDeckSettingsTrigger(deckId) {
             </div>
             <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; margin-top:10px;">Edit Tags</label>
             <div id="editTagGrid" class="tag-selector-grid" style="max-height: 200px; overflow-y: auto;">
-                ${allAvailableTags.map(tag => `
-                    <label class="tag-checkbox">
-                        <span>${tag}</span>
-                        <input type="checkbox" value="${tag}" ${currentTags.includes(tag) ? 'checked' : ''}>
-                    </label>
-                `).join('')}
+                ${allAvailableTags.map(tag => {
+                    const isChecked = currentTags.includes(tag);
+                    const tagColorMap = {
+                        'Aggro':'#ff4444','Aristocrats':'#9c27b0','Artifacts':'#607d8b','Big Mana':'#4caf50',
+                        'Blink':'#00bcd4','Burn':'#ff5722','Combo':'#ffeb3b','Control':'#2196f3',
+                        'Drain':'#5c9e8a','Group Hug':'#8bc34a','Lands':'#14a35c','Lifegain':'#fc79a4',
+                        'Midrange':'#ff9800','Mill':'#3f51b5','Reanimator':'#7b5ea7','Spellslinger':'#03a9f4',
+                        'Stax':'#856b69','Tokens':'#ffc107','Tribal':'#cddc39','Voltron':'#ac0505',
+                        '+1/+1 Counters':'#009688','Mono Color':'#9e9e9e','Budget':'#43a047',
+                        'Recursion':'#673ab7','Go Wide':'#fdd835','Goad':'#e53935','Graveyard':'#8d9b8a',
+                        'Enchantress':'#ab47bc','Storm':'#1e88e5','Theft':'#f4511e'
+                    };
+                    const c = tagColorMap[tag] || 'var(--text-dim)';
+                    const checkedClass = isChecked ? ' tag-checked' : '';
+                    const bg    = isChecked ? c + '55' : '';
+                    const bd    = isChecked ? c : c + '33';
+                    return `<label class="tag-checkbox${checkedClass}" data-color="${c}" style="border: 1px solid ${bd}; ${bg ? 'background:' + bg + ';' : ''}">
+                        <span style="color:${c};">${tag}</span>
+                        <input type="checkbox" value="${tag}" ${isChecked ? 'checked' : ''} style="display:none;">
+                    </label>`;
+                }).join('')}
             </div>
         </div>
     `;
@@ -403,6 +424,24 @@ function handleEditDeckSettingsTrigger(deckId) {
     _openModal(`Edit Deck Settings`, body, [
         { label: "Save Changes", color: "var(--success)", onClick: () => finalizeDeckUpdate(deckId) }
     ]);
+
+    // Wire tag-checked toggle for edit modal
+    document.querySelectorAll('#editTagGrid .tag-checkbox').forEach(label => {
+        const color = label.dataset.color;
+        const cb    = label.querySelector('input');
+        if (!cb) return;
+        cb.addEventListener('change', () => {
+            if (cb.checked) {
+                label.classList.add('tag-checked');
+                label.style.background  = color + '55';
+                label.style.borderColor = color;
+            } else {
+                label.classList.remove('tag-checked');
+                label.style.background  = '';
+                label.style.borderColor = color + '33';
+            }
+        });
+    });
 
     // Live Scryfall search inside the modal
     document.getElementById('fetchCmdBtn').onclick = async () => {
