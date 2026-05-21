@@ -246,10 +246,7 @@ export function updateRosterView(playerName) {
                         ${(d.deckTags || []).map(t => `<span class="individual-tag" style="${_getTagStyle(t)}">${t}</span>`).join('')}
                     </div>
                 </div>
-                <div class="player-controls">
-                    <button class="player-edit-btn" onclick="handleEditDeckSettingsTrigger('${d.id}')">✏️</button>
-                    <button class="player-del-btn"  onclick="handleDeckDeletionTrigger('${d.id}', '${d.deckName.replace(/'/g, "\\'")}', '${d.player}')">✕</button>
-                </div>
+        ${d.deckName.toLowerCase() !== 'misc' ? `<div class="player-controls"><button class="player-edit-btn" onclick="handleEditDeckSettingsTrigger('${d.id}')">✏️</button><button class="player-del-btn" onclick="handleDeckDeletionTrigger('${d.id}', '${d.deckName.replace(/'/g, "\\\\'")}', '${d.player}')">✕</button></div>` : ''}
             </div>
         `;
         ul.appendChild(li);
