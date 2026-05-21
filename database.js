@@ -27,6 +27,7 @@ let _openModal      = null;
 let _closeModal     = null;
 let _renderColorGrid = null;
 let _MODERN_COLORS  = null;
+let _TAG_COLORS     = null;
 
 let selectedRosterPlayer   = null;
 let selectedNewPlayerColor = "#3d85ff";
@@ -60,7 +61,8 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
     _closeModal       = deps.closeModal;
     _renderColorGrid  = deps.renderColorGrid;
     _MODERN_COLORS    = deps.MODERN_COLORS;
-    const TAG_COLORS  = deps.TAG_COLORS || {};
+    _TAG_COLORS       = deps.TAG_COLORS || {};
+    const TAG_COLORS  = _TAG_COLORS;
 
     // Expose window globals used by inline onclick attributes in rendered HTML
     window.handleEditDeckSettingsTrigger = (deckId) => handleEditDeckSettingsTrigger(deckId);
@@ -356,12 +358,7 @@ function handlePlayerDeletion(id, name) {
 function handleEditDeckSettingsTrigger(deckId) {
     const deck = _getAllDecks().find(d => d.id === deckId);
     const currentTags = deck.deckTags || [];
-    const allAvailableTags = [
-        "Aggro","Aristocrats","Artifacts","Big Mana","Blink","Burn","Combo","Control",
-        "Group Hug","Lands","Lifegain","Midrange","Mill","Reanimator","Spellslinger",
-        "Stax","Tokens","Tribal","Voltron","+1/+1 Counters","Mono Color","Budget",
-        "Recursion","Go Wide","Goad","Graveyard","Enchantress","Storm","Theft"
-    ];
+    const allAvailableTags = Object.keys(_TAG_COLORS);
 
     const body = `
         <div style="text-align:left; display: flex; flex-direction: column; gap: 12px;">
@@ -394,12 +391,17 @@ function handleEditDeckSettingsTrigger(deckId) {
             </div>
             <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; margin-top:10px;">Edit Tags</label>
             <div id="editTagGrid" class="tag-selector-grid" style="max-height: 200px; overflow-y: auto;">
-                ${allAvailableTags.map(tag => `
-                    <label class="tag-checkbox">
-                        <span>${tag}</span>
-                        <input type="checkbox" value="${tag}" ${currentTags.includes(tag) ? 'checked' : ''}>
-                    </label>
-                `).join('')}
+                ${allAvailableTags.map(tag => {
+                    const isChecked = currentTags.includes(tag);
+                    const c = _TAG_COLORS[tag] || 'var(--text-dim)';
+                    const checkedClass = isChecked ? ' tag-checked' : '';
+                    const bg = isChecked ? c + '55' : '';
+                    const bd = isChecked ? c : c + '33';
+                    return `<label class="tag-checkbox${checkedClass}" data-color="${c}" style="border: 1px solid ${bd}; ${bg ? 'background:' + bg + ';' : ''}">
+                        <span style="color:${c};">${tag}</span>
+                        <input type="checkbox" value="${tag}" ${isChecked ? 'checked' : ''} style="display:none;">
+                    </label>`;
+                }).join('')}
             </div>
         </div>
     `;
@@ -407,6 +409,24 @@ function handleEditDeckSettingsTrigger(deckId) {
     _openModal(`Edit Deck Settings`, body, [
         { label: "Save Changes", color: "var(--success)", onClick: () => finalizeDeckUpdate(deckId) }
     ]);
+
+    // Wire tag-checked toggle for edit modal
+    document.querySelectorAll('#editTagGrid .tag-checkbox').forEach(label => {
+        const color = label.dataset.color;
+        const cb    = label.querySelector('input');
+        if (!cb) return;
+        cb.addEventListener('change', () => {
+            if (cb.checked) {
+                label.classList.add('tag-checked');
+                label.style.background  = color + '55';
+                label.style.borderColor = color;
+            } else {
+                label.classList.remove('tag-checked');
+                label.style.background  = '';
+                label.style.borderColor = color + '33';
+            }
+        });
+    });
 
     // Live Scryfall search inside the modal
     document.getElementById('fetchCmdBtn').onclick = async () => {
