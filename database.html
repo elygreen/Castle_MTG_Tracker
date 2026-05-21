@@ -110,6 +110,7 @@
                             <input type="text" id="newPlayerName" placeholder="Name (e.g. Ely)" style="margin:0;">
                             <button id="addPlayerBtn" class="btn-blue" style="flex: none;">Register</button>
                         </div>
+                        <input type="url" id="newPlayerArchidekt" placeholder="Archidekt Profile URL (optional)" style="margin: 0;">
                         <div id="newPlayerColorGrid" class="modern-color-grid"></div>
                     </div>
                 </section>
@@ -154,6 +155,7 @@
                             <option value="5">cEDH</option>
                         </select>
 
+                        <input type="url" id="deckArchidekt" placeholder="Archidekt Deck URL (optional)" style="margin-bottom: 10px;">
                         <button id="toggleTagsBtn" type="button" class="btn-blue">+ Add Tags</button>
                         <div id="tagSelectorContainer" class="tag-selector-hidden">
                             <div id="tagSelector" class="tag-selector-grid"></div>
@@ -166,12 +168,15 @@
             <div class="manage-col">
                 <section class="card roster-card">
                     <!-- Custom colored player dropdown -->
-                    <div class="bracket-dropdown-wrapper" style="margin-bottom: 16px;">
-                        <div class="bracket-dropdown-trigger" id="rosterPlayerTrigger" style="font-size: 1.1rem; font-weight: 800; padding: 12px 14px;">
-                            <span id="rosterPlayerLabel" style="color: var(--text-dim);">Select a player...</span>
-                            <span class="chevron"></span>
+                    <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 16px;">
+                        <div class="bracket-dropdown-wrapper" style="flex: 1; margin-bottom: 0;">
+                            <div class="bracket-dropdown-trigger" id="rosterPlayerTrigger" style="font-size: 1.1rem; font-weight: 800; padding: 12px 14px;">
+                                <span id="rosterPlayerLabel" style="color: var(--text-dim);">Select a player...</span>
+                                <span class="chevron"></span>
+                            </div>
+                            <div class="bracket-dropdown-menu" id="rosterPlayerMenu"></div>
                         </div>
-                        <div class="bracket-dropdown-menu" id="rosterPlayerMenu"></div>
+                        <button id="editCurrentPlayerBtn" class="player-edit-btn" title="Edit player" style="flex-shrink: 0; padding: 10px 12px; font-size: 1rem; background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 8px; margin-top: 0;">✏️</button>
                     </div>
                     <!-- Hidden roster tabs kept for database.js compatibility -->
                     <div id="rosterTabs" style="display:none;"></div>

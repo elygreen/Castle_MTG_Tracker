@@ -119,8 +119,9 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
     if (addPlayerBtn) addPlayerBtn.onclick = async () => {
         const nameInput = document.getElementById('newPlayerName');
         const name = nameInput.value.trim();
+        const archidektUrl = document.getElementById('newPlayerArchidekt')?.value.trim() || '';
         if (!name || _getAllPlayers().some(p => p.name === name)) return;
-        await addDoc(collection(_db, "players"), { name, color: selectedNewPlayerColor });
+        await addDoc(collection(_db, "players"), { name, color: selectedNewPlayerColor, archidektUrl });
         await addDoc(collection(_db, "decks"), {
             player: name,
             deckName: 'Misc',
@@ -137,6 +138,8 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
             funRatingTotal: 0, funRatingCount: 0,
         });
         nameInput.value = '';
+        const archEl = document.getElementById('newPlayerArchidekt');
+        if (archEl) archEl.value = '';
     };
 
     // Add Deck button (database.html only)
@@ -147,6 +150,7 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
         const cmdInput  = document.getElementById('commanderName').value.trim();
         const bracket   = document.getElementById('deckBracket').value;
         const checkedTags = Array.from(document.querySelectorAll('#tagSelector input:checked')).map(cb => cb.value);
+        const deckArchidekt = document.getElementById('deckArchidekt')?.value.trim() || '';
 
         if (!player || !deckName) return;
 
@@ -178,6 +182,7 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
             commanderImage: commanderData.image,
             colorIdentity: commanderData.colorIdentity,
             deckTags: checkedTags,
+            archidektUrl: deckArchidekt,
             solRingOpening: 0,
             firstBloodCount: 0,
             mostRampCount: 0,
@@ -193,6 +198,8 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
         document.getElementById('commanderName').value = '';
         document.getElementById('deckBracket').value = '';
         document.querySelectorAll('#tagSelector input').forEach(cb => cb.checked = false);
+        const deckArchEl = document.getElementById('deckArchidekt');
+        if (deckArchEl) deckArchEl.value = '';
         alert(`Deck Saved with Commander: ${commanderData.name}`);
     };
 
@@ -277,7 +284,7 @@ export function updateRosterView(playerName) {
                         ${(d.deckTags || []).map(t => `<span class="individual-tag" style="${_getTagStyle(t)}">${t}</span>`).join('')}
                     </div>
                 </div>
-        ${d.deckName.toLowerCase() !== 'misc' ? `<div class="player-controls"><button class="player-edit-btn" onclick="handleEditDeckSettingsTrigger('${d.id}')">✏️</button><button class="player-del-btn" onclick="handleDeckDeletionTrigger('${d.id}', '${d.deckName.replace(/'/g, "\\\\'")}', '${d.player}')">✕</button></div>` : ''}
+        <div class="player-controls">${d.archidektUrl ? `<a href="${d.archidektUrl}" target="_blank" rel="noopener" class="player-edit-btn" title="View on Archidekt" style="text-decoration:none;">🔗</a>` : ''}${d.deckName.toLowerCase() !== 'misc' ? `<button class="player-edit-btn" onclick="handleEditDeckSettingsTrigger('${d.id}')">✏️</button><button class="player-del-btn" onclick="handleDeckDeletionTrigger('${d.id}', '${d.deckName.replace(/'/g, "\\\\'")}', '${d.player}')">✕</button>` : ''}</div>
             </div>
         `;
         ul.appendChild(li);
@@ -332,6 +339,16 @@ function _renderRosterTabs(players) {
         menu.appendChild(opt);
     });
 
+    // Wire edit button for currently selected player
+    const editCurrentBtn = document.getElementById('editCurrentPlayerBtn');
+    if (editCurrentBtn) {
+        editCurrentBtn.onclick = () => {
+            if (!selectedRosterPlayer) return;
+            const player = _getAllPlayers().find(p => p.name === selectedRosterPlayer);
+            if (player) handleEditPlayerTrigger(player.id, player.name, player.color);
+        };
+    }
+
     // Toggle open/close
     trigger.onclick = () => {
         trigger.classList.toggle('open');
@@ -361,10 +378,14 @@ function _renderRosterTabs(players) {
 
 function handleEditPlayerTrigger(id, name, color) {
     let tempEditColor = color;
+    const player = _getAllPlayers().find(p => p.id === id);
+    const currentArchidekt = player?.archidektUrl || '';
     const body = `
         <div style="display:flex; flex-direction:column; gap:10px; text-align:left;">
             <label style="font-size:0.75rem; color:var(--text-dim);">PLAYER NAME</label>
             <input type="text" id="editPlayerName" value="${name}" style="margin:0;">
+            <label style="font-size:0.75rem; color:var(--text-dim); margin-top:10px;">ARCHIDEKT PROFILE URL</label>
+            <input type="url" id="editPlayerArchidekt" value="${currentArchidekt}" placeholder="https://archidekt.com/u/username" style="margin:0;">
             <label style="font-size:0.75rem; color:var(--text-dim); margin-top:10px;">PLAYER COLOR</label>
             <div id="editPlayerColorGrid" class="modern-color-grid"></div>
         </div>
@@ -377,9 +398,10 @@ function handleEditPlayerTrigger(id, name, color) {
 
 async function finalizePlayerUpdate(id, oldName, newColor) {
     const newName = document.getElementById('editPlayerName').value.trim();
+    const newArchidekt = document.getElementById('editPlayerArchidekt')?.value.trim() || '';
     if (!newName) return;
     const batch = writeBatch(_db);
-    batch.update(doc(_db, "players", id), { name: newName, color: newColor });
+    batch.update(doc(_db, "players", id), { name: newName, color: newColor, archidektUrl: newArchidekt });
     if (newName !== oldName) {
         _getAllDecks()
             .filter(d => d.player === oldName)
@@ -431,6 +453,10 @@ function handleEditDeckSettingsTrigger(deckId) {
                     <option value="4" ${deck.bracket == 4 ? 'selected' : ''}>4</option>
                     <option value="5" ${deck.bracket == 5 ? 'selected' : ''}>cEDH</option>
                 </select>
+            </div>
+            <div>
+                <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;">Archidekt Deck URL</label>
+                <input type="url" id="editDeckArchidekt" value="${deck.archidektUrl || ''}" placeholder="https://archidekt.com/decks/..." style="width:100%; margin-top:5px;">
             </div>
             <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; margin-top:10px;">Edit Tags</label>
             <div id="editTagGrid" class="tag-selector-grid" style="max-height: 200px; overflow-y: auto;">
@@ -515,12 +541,14 @@ async function finalizeDeckUpdate(deckId) {
 
     if (!newName) return;
 
+    const newArchidekt = document.getElementById('editDeckArchidekt')?.value.trim() || '';
     const updateData = {
         deckName:       newName,
         commander:      newCmdName,
         bracket:        parseFloat(newBracket) || 1,
         commanderImage: previewImg ? previewImg.src : "",
-        deckTags:       checkedTags
+        deckTags:       checkedTags,
+        archidektUrl:   newArchidekt,
     };
     if (newIdentity) updateData.colorIdentity = newIdentity;
 
