@@ -220,6 +220,10 @@ export function updateRosterView(playerName) {
     const rosterDeckView = document.getElementById('rosterDeckList');
     rosterDeckView.innerHTML = '';
 
+    // Update column header to show selected player name
+    const header = document.getElementById('rosterDeckListHeader');
+    if (header) header.textContent = selectedRosterPlayer || 'Decks';
+
     if (!selectedRosterPlayer) {
         rosterDeckView.innerHTML = `<p style="color: var(--text-dim); font-size: 0.8rem; text-align: center;">Select a player to view their decks.</p>`;
         return;
