@@ -284,7 +284,7 @@ export function updateRosterView(playerName) {
                         ${(d.deckTags || []).map(t => `<span class="individual-tag" style="${_getTagStyle(t)}">${t}</span>`).join('')}
                     </div>
                 </div>
-        <div class="player-controls">${d.archidektUrl ? `<a href="${d.archidektUrl}" target="_blank" rel="noopener" class="player-edit-btn" title="View on Archidekt" style="text-decoration:none;">🔗</a>` : ''}${d.deckName.toLowerCase() !== 'misc' ? `<button class="player-edit-btn" onclick="handleEditDeckSettingsTrigger('${d.id}')">✏️</button><button class="player-del-btn" onclick="handleDeckDeletionTrigger('${d.id}', '${d.deckName.replace(/'/g, "\\\\'")}', '${d.player}')">✕</button>` : ''}</div>
+        <div class="player-controls">${d.archidektUrl ? `<a href="${d.archidektUrl}" target="_blank" rel="noopener" class="player-edit-btn" title="View on Archidekt" style="text-decoration:none; opacity:1; filter:brightness(1.2);">🔗</a>` : `<span class="player-edit-btn" title="No Archidekt link" style="opacity:0.25; cursor:default; filter:grayscale(1);">🔗</span>`}${d.deckName.toLowerCase() !== 'misc' ? `<button class="player-edit-btn" onclick="handleEditDeckSettingsTrigger('${d.id}')">✏️</button><button class="player-del-btn" onclick="handleDeckDeletionTrigger('${d.id}', '${d.deckName.replace(/'/g, "\\\\'")}', '${d.player}')">✕</button>` : ''}</div>
             </div>
         `;
         ul.appendChild(li);
