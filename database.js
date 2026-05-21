@@ -203,6 +203,14 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
         _syncPlayerSelect(players);
         _renderRosterTabs(players);
 
+        // Auto-select first player on initial load
+        if (!selectedRosterPlayer && players.length > 0) {
+            selectedRosterPlayer = players[0].name;
+            updateRosterView();
+            const firstBtn = document.querySelector('.roster-tab-btn');
+            if (firstBtn) firstBtn.classList.add('active');
+        }
+
         if (onAfterPlayersRender) onAfterPlayersRender();
     });
 }
@@ -222,7 +230,11 @@ export function updateRosterView(playerName) {
 
     // Update column header to show selected player name
     const header = document.getElementById('rosterDeckListHeader');
-    if (header) header.textContent = selectedRosterPlayer || 'Decks';
+    if (header) {
+        header.textContent = selectedRosterPlayer || 'Decks';
+        const player = _getAllPlayers().find(p => p.name === selectedRosterPlayer);
+        header.style.color = player ? player.color : 'var(--text-main)';
+    }
 
     if (!selectedRosterPlayer) {
         rosterDeckView.innerHTML = `<p style="color: var(--text-dim); font-size: 0.8rem; text-align: center;">Select a player to view their decks.</p>`;
