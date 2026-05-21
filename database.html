@@ -36,9 +36,13 @@
             box-shadow: 0 0 0 3px rgba(61,133,255,0.15);
         }
         .bracket-dropdown-trigger .chevron {
-            font-size: 0.6rem;
-            color: var(--text-dim);
+            width: 10px;
+            height: 6px;
+            flex-shrink: 0;
             transition: transform 0.15s ease;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238e9297'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
         }
         .bracket-dropdown-trigger.open .chevron {
             transform: rotate(180deg);
@@ -129,7 +133,7 @@
                         <div class="bracket-dropdown-wrapper">
                             <div class="bracket-dropdown-trigger" id="bracketTrigger">
                                 <span id="bracketLabel">Power Bracket...</span>
-                                <span class="chevron">▼</span>
+                                <span class="chevron"></span>
                             </div>
                             <div class="bracket-dropdown-menu" id="bracketMenu">
                                 <div class="bracket-option placeholder" data-value="">Power Bracket...</div>
