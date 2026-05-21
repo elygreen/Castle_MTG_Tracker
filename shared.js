@@ -327,7 +327,9 @@ export function openModal(title, bodyHtml, actions) {
     cancelBtn.textContent = 'Cancel';
     cancelBtn.onclick = closeModal;
     actionsEl.appendChild(cancelBtn);
-    document.getElementById('customModal').classList.add('active');
+    const overlay = document.getElementById('customModal');
+    overlay.classList.add('active');
+    overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
 }
 
 export function closeModal() {

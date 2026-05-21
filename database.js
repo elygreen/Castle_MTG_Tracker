@@ -426,40 +426,42 @@ function handleEditDeckSettingsTrigger(deckId) {
     const allAvailableTags = Object.keys(_TAG_COLORS);
 
     const body = `
-        <div style="text-align:left; display: flex; flex-direction: column; gap: 12px;">
-            <div id="commanderPreview" style="height: 120px; border-radius: 8px; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid var(--border); position: relative;">
+        <div style="text-align:left; display: flex; flex-direction: column; gap: 6px;">
+            <div id="commanderPreview" style="height: 80px; border-radius: 8px; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid var(--border); position: relative; margin-bottom: 2px;">
                 ${deck.commanderImage ? `<img src="${deck.commanderImage}" style="width:100%; height:100%; object-fit: cover; opacity: 0.6;">` : ''}
                 <div id="previewStatus" style="position: absolute; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
                     ${deck.commander || 'No Commander Art'}
                 </div>
             </div>
             <div>
-                <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;">Deck Name</label>
-                <input type="text" id="editDeckName" value="${deck.deckName}" style="width:100%; margin-top:5px;">
+                <label style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px;">Deck Name</label>
+                <input type="text" id="editDeckName" value="${deck.deckName}" style="width:100%; margin-top:3px; margin-bottom:0; padding: 7px 10px;">
             </div>
             <div>
-                <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;">Commander</label>
-                <div style="display: flex; gap: 5px; margin-top: 5px;">
-                    <input type="text" id="editCommanderName" value="${deck.commander || ''}" placeholder="e.g. Atraxa" style="flex: 1; margin: 0;">
-                    <button id="fetchCmdBtn" class="btn-blue" style="padding: 0 15px;">Search</button>
+                <label style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px;">Commander</label>
+                <div style="display: flex; gap: 5px; margin-top: 3px;">
+                    <input type="text" id="editCommanderName" value="${deck.commander || ''}" placeholder="e.g. Atraxa" style="flex: 1; margin: 0; padding: 7px 10px;">
+                    <button id="fetchCmdBtn" class="btn-blue" style="padding: 0 12px; font-size: 0.8rem;">Search</button>
                 </div>
             </div>
-            <div>
-                <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;">Power Bracket</label>
-                <select id="editDeckBracket" style="width:100%; margin-top:5px;">
-                    <option value="1" ${deck.bracket == 1 ? 'selected' : ''}>1</option>
-                    <option value="2" ${deck.bracket == 2 ? 'selected' : ''}>2</option>
-                    <option value="3" ${deck.bracket == 3 ? 'selected' : ''}>3</option>
-                    <option value="4" ${deck.bracket == 4 ? 'selected' : ''}>4</option>
-                    <option value="5" ${deck.bracket == 5 ? 'selected' : ''}>cEDH</option>
-                </select>
+            <div style="display: flex; gap: 8px;">
+                <div style="flex: 0 0 140px;">
+                    <label style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px;">Power Bracket</label>
+                    <select id="editDeckBracket" style="width:100%; margin-top:3px; margin-bottom:0; padding: 7px 10px;">
+                        <option value="1" ${deck.bracket == 1 ? 'selected' : ''}>1</option>
+                        <option value="2" ${deck.bracket == 2 ? 'selected' : ''}>2</option>
+                        <option value="3" ${deck.bracket == 3 ? 'selected' : ''}>3</option>
+                        <option value="4" ${deck.bracket == 4 ? 'selected' : ''}>4</option>
+                        <option value="5" ${deck.bracket == 5 ? 'selected' : ''}>cEDH</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px;">Archidekt Deck URL</label>
+                    <input type="url" id="editDeckArchidekt" value="${deck.archidektUrl || ''}" placeholder="https://archidekt.com/decks/..." style="width:100%; margin-top:3px; margin-bottom:0; padding: 7px 10px;">
+                </div>
             </div>
-            <div>
-                <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;">Archidekt Deck URL</label>
-                <input type="url" id="editDeckArchidekt" value="${deck.archidektUrl || ''}" placeholder="https://archidekt.com/decks/..." style="width:100%; margin-top:5px;">
-            </div>
-            <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; margin-top:10px;">Edit Tags</label>
-            <div id="editTagGrid" class="tag-selector-grid" style="max-height: 200px; overflow-y: auto;">
+            <label style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px;">Edit Tags</label>
+            <div id="editTagGrid" class="tag-selector-grid" style="max-height: 150px; overflow-y: auto;">
                 ${allAvailableTags.map(tag => {
                     const isChecked = currentTags.includes(tag);
                     const c = _TAG_COLORS[tag] || 'var(--text-dim)';
