@@ -898,3 +898,24 @@ body.role-user #addParticipantBtn { display: none !important; }
     position: relative;
     z-index: 1;
 }
+/* Participant card commander art background */
+.participant-card-compact.has-commander-art {
+    position: relative;
+    overflow: hidden;
+}
+.participant-card-compact.has-commander-art::before {
+    content: "";
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    background-image: var(--commander-art);
+    background-size: cover;
+    background-position: center 20%;
+    opacity: 0.18;
+    z-index: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+.participant-card-compact.has-commander-art > * {
+    position: relative;
+    z-index: 1;
+}

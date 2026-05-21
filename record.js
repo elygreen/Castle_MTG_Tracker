@@ -168,6 +168,8 @@ function addParticipant(defaultPlayerName = null) {
         deckTrigger.textContent = 'Deck...';
         deckTrigger.style.color       = 'var(--text-dim)';
         deckTrigger.style.borderColor = 'var(--border)';
+        row.style.removeProperty('--commander-art');
+        row.classList.remove('has-commander-art');
 
         let filtered = getAllDecks().filter(d => d.player === playerName);
         filtered.sort((a, b) => a.deckName === 'Misc' ? 1 : b.deckName === 'Misc' ? -1 : a.deckName.localeCompare(b.deckName));
@@ -186,6 +188,13 @@ function addParticipant(defaultPlayerName = null) {
                 deckTrigger.style.color       = 'white';
                 deckTrigger.style.borderColor = playerColor;
                 deckMenu.classList.remove('open');
+                if (deckObj?.commanderImage) {
+                    row.style.setProperty('--commander-art', `url(${deckObj.commanderImage})`);
+                    row.classList.add('has-commander-art');
+                } else {
+                    row.style.removeProperty('--commander-art');
+                    row.classList.remove('has-commander-art');
+                }
                 refreshSharedStatDropdowns();
             });
         });
