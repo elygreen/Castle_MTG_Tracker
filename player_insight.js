@@ -116,7 +116,9 @@ export function renderInsightTab() {
             if (bIsMisc && !aIsMisc) return -1;
             return 0;
         });
-    const playerColor = _getPlayerColor(selectedInsightPlayer);
+    const playerColor  = _getPlayerColor(selectedInsightPlayer);
+    const playerObj    = _getAllPlayers().find(p => p.name === selectedInsightPlayer);
+    const archidektUrl = playerObj?.archidektUrl || '';
 
     const playerStats = playerDecks.reduce((acc, d) => ({
         games:    acc.games    + (d.gamesPlayed || ((d.wins || 0) + (d.losses || 0)) || 0),
@@ -134,6 +136,14 @@ export function renderInsightTab() {
                 <div style="flex: 1; min-width: 220px;">
                     <h1 style="margin: 0; font-size: 2rem; font-weight: 900; color: ${playerColor}; text-transform: uppercase; letter-spacing: -1px;">${selectedInsightPlayer}</h1>
                     <p style="margin: 2px 0 0; color: var(--text-dim); font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Overall Performance</p>
+                    ${archidektUrl ? `
+                    <a href="${archidektUrl}" target="_blank" rel="noopener noreferrer"
+                       style="display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 6px 14px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: var(--text-main); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; text-decoration: none; transition: background 0.15s ease, border-color 0.15s ease;"
+                       onmouseover="this.style.background='rgba(255,255,255,0.13)'; this.style.borderColor='rgba(255,255,255,0.3)';"
+                       onmouseout="this.style.background='rgba(255,255,255,0.07)'; this.style.borderColor='rgba(255,255,255,0.15)';">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        Archidekt Profile
+                    </a>` : ''}
                     <div class="stat-badges" style="margin-top: 12px; background: rgba(0,0,0,0.3); padding: 10px; gap: 8px;">
                         <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${playerStats.blood}</b></div>
                         <div class="stat-badge-pill pill-ramp">MOST RAMP <b>${playerStats.ramp}</b></div>
