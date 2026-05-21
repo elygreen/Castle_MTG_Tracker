@@ -121,14 +121,19 @@ export function renderInsightTab() {
     const archidektUrl = playerObj?.archidektUrl || '';
 
     const playerStats = playerDecks.reduce((acc, d) => ({
-        games:    acc.games    + (d.gamesPlayed || ((d.wins || 0) + (d.losses || 0)) || 0),
-        blood:    acc.blood    + (d.firstBloodCount  || 0),
-        ramp:     acc.ramp     + (d.mostRampCount    || 0),
-        draw:     acc.draw     + (d.mostDrawCount    || 0),
-        first:    acc.first    + (d.wentFirstCount   || 0),
-        last:     acc.last     + (d.wentLastCount    || 0),
-        mulligan: acc.mulligan + (d.mulliganCount    || 0),
-    }), { games: 0, blood: 0, ramp: 0, draw: 0, first: 0, last: 0, mulligan: 0 });
+        games:       acc.games       + (d.gamesPlayed || ((d.wins || 0) + (d.losses || 0)) || 0),
+        blood:       acc.blood       + (d.firstBloodCount      || 0),
+        ramp:        acc.ramp        + (d.mostRampCount        || 0),
+        draw:        acc.draw        + (d.mostDrawCount        || 0),
+        first:       acc.first       + (d.wentFirstCount       || 0),
+        last:        acc.last        + (d.wentLastCount        || 0),
+        mulligan:    acc.mulligan    + (d.mulliganCount        || 0),
+        sol:         acc.sol         + (d.solRingOpening       || 0),
+        snapkeep:    acc.snapkeep    + (d.snapKeepCount        || 0),
+        interaction: acc.interaction + (d.mostInteractionCount || 0),
+        archenemy:   acc.archenemy   + (d.archEnemyCount       || 0),
+        takenout:    acc.takenout    + (d.takenOutFirstCount    || 0),
+    }), { games: 0, blood: 0, ramp: 0, draw: 0, first: 0, last: 0, mulligan: 0, sol: 0, snapkeep: 0, interaction: 0, archenemy: 0, takenout: 0 });
 
     detailContainer.innerHTML = `
         <div class="card" style="margin-bottom: 15px; padding: 18px; border-left: 5px solid ${playerColor}; background: linear-gradient(90deg, var(--surface) 0%, rgba(0,0,0,0.2) 100%);">
@@ -145,12 +150,17 @@ export function renderInsightTab() {
                         Archidekt Profile
                     </a>` : ''}
                     <div class="stat-badges" style="margin-top: 12px; background: rgba(0,0,0,0.3); padding: 10px; gap: 8px;">
+                        <div class="stat-badge-pill pill-sol">SOL RING <b>${playerStats.sol}</b></div>
                         <div class="stat-badge-pill pill-blood">FIRST BLOOD <b>${playerStats.blood}</b></div>
                         <div class="stat-badge-pill pill-ramp">MOST RAMP <b>${playerStats.ramp}</b></div>
                         <div class="stat-badge-pill pill-draw">MOST DRAW <b>${playerStats.draw}</b></div>
+                        <div class="stat-badge-pill pill-interaction">MOST INTERACTION <b>${playerStats.interaction}</b></div>
                         <div class="stat-badge-pill pill-first">WENT FIRST <b>${playerStats.first}</b></div>
                         <div class="stat-badge-pill pill-last">WENT LAST <b>${playerStats.last}</b></div>
                         <div class="stat-badge-pill pill-mulligan">2+ MULLIGANS <b>${playerStats.mulligan}</b></div>
+                        <div class="stat-badge-pill pill-snapkeep">SNAP KEEP <b>${playerStats.snapkeep}</b></div>
+                        <div class="stat-badge-pill pill-archenemy">ARCH ENEMY <b>${playerStats.archenemy}</b></div>
+                        <div class="stat-badge-pill pill-takenout">TAKEN OUT FIRST <b>${playerStats.takenout}</b></div>
                     </div>
                 </div>
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 150px;">
@@ -192,12 +202,17 @@ export function renderInsightTab() {
                             </div>
                             <div class="stat-badges">
                                 <div class="stat-badge-pill" style="background:rgba(255,255,255,0.1);">GAMES <b>${total}</b></div>
+                                <div class="stat-badge-pill pill-sol">SOL RING <b>${deck.solRingOpening || 0}${calcPct(deck.solRingOpening)}</b></div>
+                                <div class="stat-badge-pill pill-mulligan">MULLIGAN <b>${deck.mulliganCount || 0}${calcPct(deck.mulliganCount)}</b></div>
+                                <div class="stat-badge-pill pill-snapkeep">SNAP KEEP <b>${deck.snapKeepCount || 0}${calcPct(deck.snapKeepCount)}</b></div>
                                 <div class="stat-badge-pill pill-blood">BLOOD <b>${deck.firstBloodCount || 0}${calcPct(deck.firstBloodCount)}</b></div>
                                 <div class="stat-badge-pill pill-ramp">RAMP <b>${deck.mostRampCount || 0}${calcPct(deck.mostRampCount)}</b></div>
                                 <div class="stat-badge-pill pill-draw">MOST DRAW <b>${deck.mostDrawCount || 0}${calcPct(deck.mostDrawCount)}</b></div>
+                                <div class="stat-badge-pill pill-interaction">INTERACTION <b>${deck.mostInteractionCount || 0}${calcPct(deck.mostInteractionCount)}</b></div>
                                 <div class="stat-badge-pill pill-first">1ST <b>${deck.wentFirstCount || 0}${calcPct(deck.wentFirstCount)}</b></div>
                                 <div class="stat-badge-pill pill-last">LAST <b>${deck.wentLastCount || 0}${calcPct(deck.wentLastCount)}</b></div>
-                                <div class="stat-badge-pill pill-mulligan">MULLIGAN <b>${deck.mulliganCount || 0}${calcPct(deck.mulliganCount)}</b></div>
+                                <div class="stat-badge-pill pill-archenemy">ARCH ENEMY <b>${deck.archEnemyCount || 0}${calcPct(deck.archEnemyCount)}</b></div>
+                                <div class="stat-badge-pill pill-takenout">TAKEN OUT 1ST <b>${deck.takenOutFirstCount || 0}${calcPct(deck.takenOutFirstCount)}</b></div>
                             </div>
                         </div>`;
                 }).join('')}
