@@ -116,8 +116,18 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
         if (!name || _getAllPlayers().some(p => p.name === name)) return;
         await addDoc(collection(_db, "players"), { name, color: selectedNewPlayerColor });
         await addDoc(collection(_db, "decks"), {
+            player: name,
+            deckName: 'Misc',
+            bracket: 1,
+            commander: 'n/a',
+            commanderImage: '',
+            colorIdentity: [],
+            deckTags: [],
+            gamesPlayed: 0,
             firstBloodCount: 0, mostRampCount: 0,
             mostDrawCount: 0, solRingOpening: 0, wentFirstCount: 0,
+            wentLastCount: 0, mulliganCount: 0, snapKeepCount: 0,
+            mostInteractionCount: 0, archEnemyCount: 0, takenOutFirstCount: 0,
             funRatingTotal: 0, funRatingCount: 0,
         });
         nameInput.value = '';
