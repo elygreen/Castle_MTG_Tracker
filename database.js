@@ -28,6 +28,9 @@ let _closeModal     = null;
 let _renderColorGrid = null;
 let _MODERN_COLORS  = null;
 let _TAG_COLORS     = null;
+let _BRACKET_COLORS = null;
+let _formatBracket  = null;
+let _getColorPips   = null;
 
 let selectedRosterPlayer   = null;
 let selectedNewPlayerColor = "#3d85ff";
@@ -62,6 +65,9 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
     _renderColorGrid  = deps.renderColorGrid;
     _MODERN_COLORS    = deps.MODERN_COLORS;
     _TAG_COLORS       = deps.TAG_COLORS || {};
+    _BRACKET_COLORS   = deps.BRACKET_COLORS || {};
+    _formatBracket    = deps.formatBracket  || ((v) => v || '1');
+    _getColorPips     = deps.getColorPips   || (() => '');
     const TAG_COLORS  = _TAG_COLORS;
 
     // Expose window globals used by inline onclick attributes in rendered HTML
@@ -267,7 +273,9 @@ export function updateRosterView(playerName) {
         li.innerHTML = `
             <div class="roster-deck-content">
                 <div class="roster-deck-info">
-                    <div class="roster-deck-title">${d.deckName}</div>
+                    <div class="roster-deck-title">
+                        <span style="font-size: 0.8rem; letter-spacing: -2px; margin-right: 5px;">${_getColorPips(d.colorIdentity)}</span>${d.deckName}<span style="font-size: 0.6rem; color: white; background: ${_BRACKET_COLORS ? (_BRACKET_COLORS[d.bracket] || 'var(--accent)') : 'var(--accent)'}; padding: 2px 5px; border-radius: 4px; font-weight: 800; margin-left: 7px; text-transform: uppercase;">${_formatBracket(d.bracket)}</span>
+                    </div>
                     <div class="deck-tags-grid">
                         ${(d.deckTags || []).map(t => `<span class="individual-tag" style="${_getTagStyle(t)}">${t}</span>`).join('')}
                     </div>

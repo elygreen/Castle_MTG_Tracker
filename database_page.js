@@ -30,6 +30,9 @@ checkAuth(true).then(level => {
             renderColorGrid,
             MODERN_COLORS,
             TAG_COLORS,
+            BRACKET_COLORS,
+            formatBracket,
+            getColorPips,
         },
         {
             onPlayersUpdated:     (players) => { setAllPlayers(players); },
