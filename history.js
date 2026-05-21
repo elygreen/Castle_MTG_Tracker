@@ -163,6 +163,7 @@ export function initHistoryListener(db, historyListEl, getPlayerColor, getTagSty
 
             // Wire up the delete button
             const deleteBtn = card.querySelector('.history-delete-btn');
+            if (deleteBtn && !onDeleteRequest) { deleteBtn.style.display = 'none'; }
             if (deleteBtn && onDeleteRequest) {
                 deleteBtn.addEventListener('click', (e) => {
                     e.stopPropagation();

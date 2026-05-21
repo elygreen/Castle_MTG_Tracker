@@ -9,13 +9,15 @@ import {
     getPlayerColor, getTagStyle, getColorPips, formatBracket,
     openModal, closeModal, renderColorGrid,
     MODERN_COLORS, BRACKET_COLORS,
+    initAuthButton,
 } from "./shared.js";
 
 import { initDatabase } from "./database.js";
 import { initStandingsListener } from "./standings.js";
 import { initInsight, renderInsightTab } from "./player_insight.js";
 
-checkAuth().then(level => {
+initAuthButton();
+checkAuth(true).then(level => {
     if (!level) return;
 
     // Players + decks both needed for insight rendering.

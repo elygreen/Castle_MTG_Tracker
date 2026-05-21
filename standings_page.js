@@ -8,12 +8,14 @@ import {
     getAllPlayers, getAllDecks, setAllPlayers, setAllDecks,
     getPlayerColor, getTagStyle, getColorPips, formatBracket,
     MODERN_COLORS, BRACKET_COLORS,
+    initAuthButton,
 } from "./shared.js";
 
 import { initDatabase } from "./database.js";
 import { initStandingsListener } from "./standings.js";
 
-checkAuth().then(level => {
+initAuthButton();
+checkAuth(true).then(level => {
     if (!level) return;
 
     // Need allPlayers so getPlayerColor works for deck owner labels.

@@ -862,9 +862,26 @@ textarea:focus {
     color: white;
 }
 
-body.role-user .edit-btn-sm,
-body.role-user .player-controls,
-body.role-user #addParticipantBtn { display: none !important; }
+/* (role-user has no UI restrictions — same edit access as admin) */
+
+/* Guest (not logged in) — gray out restricted nav tabs and submit button */
+body.role-guest .tab-btn[href="standings.html"],
+body.role-guest .tab-btn[href="insight.html"],
+body.role-guest .tab-btn[href="database.html"] {
+    opacity: 0.35;
+    pointer-events: none;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+
+body.role-guest #submitMatchBtn {
+    opacity: 0.35;
+    pointer-events: none;
+    cursor: not-allowed;
+    filter: grayscale(1);
+    transform: none !important;
+    box-shadow: none !important;
+}
 
 /* Submit match button — extra emphasis */
 #submitMatchBtn {

@@ -8,11 +8,13 @@ import {
     getAllPlayers, setAllPlayers,
     getPlayerColor, getTagStyle,
     MODERN_COLORS,
+    initAuthButton,
 } from "./shared.js";
 
 import { initDatabase } from "./database.js";
 import { initHistoryListener, deleteMatch } from "./history.js";
 
+initAuthButton();
 checkAuth().then(level => {
     if (!level) return;
 
@@ -31,14 +33,9 @@ checkAuth().then(level => {
         { onPlayersUpdated: (players) => setAllPlayers(players) }
     );
 
-    initHistoryListener(
-        db,
-        document.getElementById('matchHistoryList'),
-        getPlayerColor,
-        getTagStyle,
-        20,
-        (matchId, matchData) => {
-            // Show confirmation modal
+    const canEdit = level === 'admin' || level === 'user';
+
+    const deleteCallback = canEdit ? (matchId, matchData) => {
             const dateStr = matchData.timestamp
                 ? matchData.timestamp.toDate().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
                 : 'this match';
@@ -61,7 +58,15 @@ checkAuth().then(level => {
             document.getElementById('cancelDeleteBtn').onclick = () => {
                 document.getElementById('deleteModal').classList.remove('active');
             };
-        }
+        } : null;
+
+    initHistoryListener(
+        db,
+        document.getElementById('matchHistoryList'),
+        getPlayerColor,
+        getTagStyle,
+        20,
+        deleteCallback
     );
 
 }).catch(console.error);

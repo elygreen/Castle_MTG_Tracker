@@ -9,12 +9,14 @@ import {
     getPlayerColor, getTagStyle, getColorPips, formatBracket,
     openModal, closeModal, renderColorGrid,
     MODERN_COLORS, BRACKET_COLORS, TAG_COLORS,
+    initAuthButton,
 } from "./shared.js";
 
 import { initDatabase, updateRosterView } from "./database.js";
 import { initStandingsListener } from "./standings.js";
 
-checkAuth().then(level => {
+initAuthButton();
+checkAuth(true).then(level => {
     if (!level) return;
 
     initDatabase(

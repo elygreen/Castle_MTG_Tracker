@@ -12,6 +12,7 @@ import {
     getAllPlayers, getAllDecks, setAllPlayers, setAllDecks,
     getPlayerColor, getTagStyle, getColorPips, getColorPipsHtml,
     MODERN_COLORS, BRACKET_COLORS, TAG_COLORS,
+    initAuthButton,
 } from "./shared.js";
 
 import { initDatabase } from "./database.js";
@@ -21,12 +22,11 @@ import { initHistoryListener } from "./history.js";
 // ---------------------------------------------------------------------------
 // Boot
 // ---------------------------------------------------------------------------
-checkAuth().then(level => {
-    if (!level) return;
-    _boot();
-}).catch(console.error);
+initAuthButton();
+checkAuth().then(level => _boot(level)).catch(console.error);
 
-function _boot() {
+function _boot(authLevel = 'guest') {
+    const canEdit = authLevel === 'admin' || authLevel === 'user';
     // We need allPlayers and allDecks populated so the record form works.
     // database.js owns the players snapshot; standings.js owns the decks snapshot.
     // We init both here purely for their data side-effects (no UI targets on this page).
@@ -78,10 +78,12 @@ function _boot() {
 let initialPopulated = false;
 
 function _initRecordPage() {
-    document.getElementById('addParticipantBtn').onclick = () => {
-        addParticipant();
-        refreshSharedStatDropdowns();
-    };
+    const addParticipantBtn = document.getElementById('addParticipantBtn');
+    if (!canEdit) {
+        addParticipantBtn.style.display = 'none';
+    } else {
+        addParticipantBtn.onclick = () => { addParticipant(); refreshSharedStatDropdowns(); };
+    }
 
     ['shared-first', 'shared-last', 'shared-blood', 'shared-ramp', 'shared-draw', 'shared-interaction', 'shared-archenemy', 'shared-takenout'].forEach(id => {
         const sel = document.getElementById(id);
@@ -102,7 +104,15 @@ function _initRecordPage() {
         });
     });
 
-    document.getElementById('submitMatchBtn').onclick = submitMatch;
+    const submitBtn = document.getElementById('submitMatchBtn');
+    if (!canEdit) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '🔒 Login to Record Matches';
+        submitBtn.style.opacity = '0.45';
+        submitBtn.style.cursor = 'not-allowed';
+    } else {
+        submitBtn.onclick = submitMatch;
+    }
 
     document.addEventListener('click', () => {
         document.querySelectorAll('.enjoy-menu.open, .deck-menu.open').forEach(m => m.classList.remove('open'));
