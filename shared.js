@@ -42,8 +42,7 @@ async function getPasswords() {
 }
 
 /**
- * Checks (or prompts for) the session password.
- * Redirects to record.html on failure, applies access restrictions on success.
+ * Checks (or prompts for) the session password via an in-page overlay.
  * @returns {Promise<string|false>} The access level ('admin'|'user') or false.
  */
 export async function checkAuth() {
@@ -56,28 +55,151 @@ export async function checkAuth() {
     }
 
     const PASSWORDS = await getPasswords();
-    const entry = prompt("Please enter password:");
 
-    let level = null;
-    if (entry === PASSWORDS.ADMIN) level = 'admin';
-    else if (entry === PASSWORDS.USER) level = 'user';
+    return new Promise((resolve) => {
+        // Build the overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'authOverlay';
+        overlay.innerHTML = `
+            <div style="
+                position: fixed; inset: 0; z-index: 9999;
+                background: #0d0f11;
+                display: flex; flex-direction: column;
+                align-items: center; justify-content: center;
+                font-family: 'Inter', -apple-system, sans-serif;
+            ">
+                <div style="
+                    background: #1e2124;
+                    border: 1px solid #2f3338;
+                    border-radius: 16px;
+                    padding: 40px 36px;
+                    width: 100%;
+                    max-width: 360px;
+                    box-shadow: 0 24px 64px rgba(0,0,0,0.7);
+                    display: flex;
+                    flex-direction: column;
+                    gap: 20px;
+                ">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; margin-bottom: 8px;">🏰</div>
+                        <h1 style="margin: 0; font-size: 1.3rem; font-weight: 800; color: white; letter-spacing: -0.3px;">Castle MTG</h1>
+                        <p style="margin: 6px 0 0; font-size: 0.8rem; color: #8e9297;">Enter your password to continue</p>
+                    </div>
 
-    if (level) {
-        sessionStorage.setItem('mtg_access_level', level);
-        document.body.classList.add('auth-passed');
-        applyAccessRestrictions(level);
-        return level;
-    } else {
-        alert("Incorrect password. Access denied.");
-        document.body.style.opacity = "1";
-        document.body.innerHTML = `
-            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#121416; color:white; font-family:sans-serif;">
-                <h1>Locked</h1>
-                <p>Refresh the page to try again.</p>
+                    <div style="position: relative;">
+                        <input
+                            id="authPasswordInput"
+                            type="password"
+                            placeholder="Password"
+                            autocomplete="current-password"
+                            style="
+                                width: 100%; box-sizing: border-box;
+                                background: #121416;
+                                border: 1px solid #2f3338;
+                                border-radius: 8px;
+                                color: white;
+                                padding: 12px 44px 12px 14px;
+                                font-size: 14px;
+                                outline: none;
+                                transition: border-color 0.15s ease, box-shadow 0.15s ease;
+                            "
+                        >
+                        <button id="authToggleVisibility" type="button" style="
+                            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+                            background: none; border: none; cursor: pointer;
+                            color: #8e9297; font-size: 0.85rem; padding: 4px;
+                        ">👁</button>
+                    </div>
+
+                    <div id="authError" style="
+                        display: none;
+                        font-size: 0.78rem;
+                        color: #ff4444;
+                        background: rgba(255,68,68,0.1);
+                        border: 1px solid rgba(255,68,68,0.25);
+                        border-radius: 6px;
+                        padding: 8px 12px;
+                        text-align: center;
+                    ">Incorrect password. Try again.</div>
+
+                    <button id="authSubmitBtn" style="
+                        background: #3d85ff;
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        padding: 12px;
+                        font-size: 0.9rem;
+                        font-weight: 700;
+                        cursor: pointer;
+                        transition: filter 0.15s ease, transform 0.15s ease;
+                        width: 100%;
+                    ">Enter</button>
+                </div>
             </div>
         `;
-        return false;
-    }
+        document.body.appendChild(overlay);
+        document.body.style.opacity = '1';
+
+        const input   = overlay.querySelector('#authPasswordInput');
+        const submitBtn = overlay.querySelector('#authSubmitBtn');
+        const errorEl = overlay.querySelector('#authError');
+        const toggleBtn = overlay.querySelector('#authToggleVisibility');
+
+        // Focus input immediately
+        setTimeout(() => input.focus(), 50);
+
+        // Show/hide password toggle
+        toggleBtn.addEventListener('click', () => {
+            input.type = input.type === 'password' ? 'text' : 'password';
+            toggleBtn.textContent = input.type === 'password' ? '👁' : '🙈';
+        });
+
+        // Focus styling
+        input.addEventListener('focus', () => {
+            input.style.borderColor = '#3d85ff';
+            input.style.boxShadow   = '0 0 0 3px rgba(61,133,255,0.15)';
+        });
+        input.addEventListener('blur', () => {
+            input.style.borderColor = '#2f3338';
+            input.style.boxShadow   = 'none';
+        });
+
+        // Hover effect on button
+        submitBtn.addEventListener('mouseenter', () => {
+            submitBtn.style.filter = 'brightness(1.15)';
+            submitBtn.style.transform = 'translateY(-1px)';
+        });
+        submitBtn.addEventListener('mouseleave', () => {
+            submitBtn.style.filter = '';
+            submitBtn.style.transform = '';
+        });
+
+        function attempt() {
+            const entry = input.value;
+            let level = null;
+            if (entry === PASSWORDS.ADMIN) level = 'admin';
+            else if (entry === PASSWORDS.USER) level = 'user';
+
+            if (level) {
+                sessionStorage.setItem('mtg_access_level', level);
+                overlay.style.transition = 'opacity 0.3s ease';
+                overlay.style.opacity    = '0';
+                setTimeout(() => overlay.remove(), 300);
+                document.body.classList.add('auth-passed');
+                applyAccessRestrictions(level);
+                resolve(level);
+            } else {
+                errorEl.style.display = 'block';
+                input.style.borderColor = '#ff4444';
+                input.style.boxShadow   = '0 0 0 3px rgba(255,68,68,0.15)';
+                input.value = '';
+                setTimeout(() => input.focus(), 50);
+            }
+        }
+
+        submitBtn.addEventListener('click', attempt);
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') attempt(); });
+    });
 }
 
 export function applyAccessRestrictions(level) {

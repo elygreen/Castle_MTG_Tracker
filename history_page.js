@@ -11,13 +11,12 @@ import {
 } from "./shared.js";
 
 import { initDatabase } from "./database.js";
-import { initHistoryListener } from "./history.js";
+import { initHistoryListener, deleteMatch } from "./history.js";
 
 checkAuth().then(level => {
     if (!level) return;
 
     // Need allPlayers so history cards can colour player names correctly.
-    // Init database purely for its players snapshot side-effect.
     initDatabase(
         {
             db,
@@ -36,7 +35,33 @@ checkAuth().then(level => {
         db,
         document.getElementById('matchHistoryList'),
         getPlayerColor,
-        getTagStyle
+        getTagStyle,
+        20,
+        (matchId, matchData) => {
+            // Show confirmation modal
+            const dateStr = matchData.timestamp
+                ? matchData.timestamp.toDate().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : 'this match';
+            const names = matchData.participants.map(p => p.player).join(', ');
+
+            document.getElementById('deleteModalDate').textContent   = dateStr;
+            document.getElementById('deleteModalPlayers').textContent = names;
+            document.getElementById('deleteModal').classList.add('active');
+
+            document.getElementById('confirmDeleteBtn').onclick = async () => {
+                document.getElementById('deleteModal').classList.remove('active');
+                try {
+                    await deleteMatch(db, matchId, matchData);
+                } catch (err) {
+                    console.error("Failed to delete match:", err);
+                    alert("Error deleting match. Check the console.");
+                }
+            };
+
+            document.getElementById('cancelDeleteBtn').onclick = () => {
+                document.getElementById('deleteModal').classList.remove('active');
+            };
+        }
     );
 
 }).catch(console.error);

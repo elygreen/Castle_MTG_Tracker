@@ -232,10 +232,6 @@ export function updateRosterView(playerName) {
     decks.forEach(d => {
         const li = document.createElement('li');
         li.className = 'roster-deck-item';
-        if (d.commanderImage) {
-            li.style.setProperty('--commander-art', `url(${d.commanderImage})`);
-            li.classList.add('has-commander-art');
-        }
         li.innerHTML = `
             <div class="roster-deck-content">
                 <div class="roster-deck-info">
@@ -385,15 +381,11 @@ function handleEditDeckSettingsTrigger(deckId) {
             <div>
                 <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;">Power Bracket</label>
                 <select id="editDeckBracket" style="width:100%; margin-top:5px;">
-                    <option value="1"   ${deck.bracket == 1   ? 'selected' : ''}>1</option>
-                    <option value="1.5" ${deck.bracket == 1.5 ? 'selected' : ''}>1+</option>
-                    <option value="2"   ${deck.bracket == 2   ? 'selected' : ''}>2</option>
-                    <option value="2.5" ${deck.bracket == 2.5 ? 'selected' : ''}>2+</option>
-                    <option value="3"   ${deck.bracket == 3   ? 'selected' : ''}>3</option>
-                    <option value="3.5" ${deck.bracket == 3.5 ? 'selected' : ''}>3+</option>
-                    <option value="4"   ${deck.bracket == 4   ? 'selected' : ''}>4</option>
-                    <option value="4.5" ${deck.bracket == 4.5 ? 'selected' : ''}>4+</option>
-                    <option value="5"   ${deck.bracket == 5   ? 'selected' : ''}>cEDH</option>
+                    <option value="1" ${deck.bracket == 1 ? 'selected' : ''}>1</option>
+                    <option value="2" ${deck.bracket == 2 ? 'selected' : ''}>2</option>
+                    <option value="3" ${deck.bracket == 3 ? 'selected' : ''}>3</option>
+                    <option value="4" ${deck.bracket == 4 ? 'selected' : ''}>4</option>
+                    <option value="5" ${deck.bracket == 5 ? 'selected' : ''}>cEDH</option>
                 </select>
             </div>
             <label style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; margin-top:10px;">Edit Tags</label>

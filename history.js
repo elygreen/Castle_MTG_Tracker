@@ -5,7 +5,8 @@
  */
 
 import {
-    getFirestore, collection, query, orderBy, limit, onSnapshot
+    getFirestore, collection, query, orderBy, limit, onSnapshot,
+    doc, deleteDoc, writeBatch, increment, getDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /**
@@ -34,6 +35,7 @@ export function buildHistoryCard(match, matchId, getPlayerColor, getTagStyle) {
             <div class="history-date">${dateStr}</div>
             <div style="display:flex; gap:10px; align-items:center;">
                 <div class="history-date">${match.participants.length} Players</div>
+                <button class="history-delete-btn" data-match-id="${matchId}" title="Delete match" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.75rem; font-weight:800; padding:2px 6px; border-radius:4px; transition:background 0.15s ease;">✕ Delete</button>
             </div>
         </div>
         <div class="history-body">
@@ -99,7 +101,50 @@ export function buildHistoryCard(match, matchId, getPlayerColor, getTagStyle) {
  * @param {number}       [maxMatches=20] - How many recent matches to show
  * @returns {Function}   Firestore unsubscribe function
  */
-export function initHistoryListener(db, historyListEl, getPlayerColor, getTagStyle, maxMatches = 20) {
+
+/**
+ * Deletes a match and reverses all stat increments on the affected decks.
+ *
+ * @param {import("firebase/firestore").Firestore} db
+ * @param {string} matchId
+ * @param {Object} matchData - The full match document data
+ */
+export async function deleteMatch(db, matchId, matchData) {
+    const batch = writeBatch(db);
+
+    for (const p of matchData.participants) {
+        if (!p.deckId) continue;
+        const deckRef = doc(db, "decks", p.deckId);
+
+        // Verify deck still exists before trying to update
+        const deckSnap = await getDoc(deckRef);
+        if (!deckSnap.exists()) continue;
+
+        const funRating = p.funRating || 0;
+
+        batch.update(deckRef, {
+            gamesPlayed:          increment(-1),
+            funRatingTotal:       increment(-funRating),
+            funRatingCount:       increment(funRating > 0 ? -1 : 0),
+            solRingOpening:       increment(p.sol         ? -1 : 0),
+            mulliganCount:        increment(p.mulligan    ? -1 : 0),
+            snapKeepCount:        increment(p.snapkeep    ? -1 : 0),
+            firstBloodCount:      increment(p.blood       ? -1 : 0),
+            mostRampCount:        increment(p.ramp        ? -1 : 0),
+            mostDrawCount:        increment(p.draw        ? -1 : 0),
+            wentFirstCount:       increment(p.first       ? -1 : 0),
+            wentLastCount:        increment(p.last        ? -1 : 0),
+            mostInteractionCount: increment(p.interaction ? -1 : 0),
+            archEnemyCount:       increment(p.archenemy   ? -1 : 0),
+            takenOutFirstCount:   increment(p.takenout    ? -1 : 0),
+        });
+    }
+
+    batch.delete(doc(db, "matches", matchId));
+    await batch.commit();
+}
+
+export function initHistoryListener(db, historyListEl, getPlayerColor, getTagStyle, maxMatches = 20, onDeleteRequest = null) {
     const q = query(
         collection(db, "matches"),
         orderBy("timestamp", "desc"),
@@ -115,6 +160,16 @@ export function initHistoryListener(db, historyListEl, getPlayerColor, getTagSty
                 getPlayerColor,
                 getTagStyle
             );
+
+            // Wire up the delete button
+            const deleteBtn = card.querySelector('.history-delete-btn');
+            if (deleteBtn && onDeleteRequest) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    onDeleteRequest(docSnap.id, docSnap.data());
+                });
+            }
+
             historyListEl.appendChild(card);
         });
     });

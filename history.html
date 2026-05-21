@@ -28,5 +28,26 @@
     </div>
 
     <script type="module" src="history_page.js"></script>
+
+    <!-- Delete confirmation modal -->
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-card">
+            <h3 style="margin-top:0; color: var(--danger);">Delete Match?</h3>
+            <div style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">
+                <span id="deleteModalDate" style="font-weight:800; color: var(--text-main);"></span>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 16px;">
+                <span id="deleteModalPlayers"></span>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0 0 20px;">
+                This will permanently delete the match and reverse all stat changes for every deck involved.
+            </p>
+            <div class="modal-actions">
+                <button id="confirmDeleteBtn" style="background-color: var(--danger); color: white;">Delete & Reverse Stats</button>
+                <button id="cancelDeleteBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
