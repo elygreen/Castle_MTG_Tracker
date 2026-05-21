@@ -15,7 +15,7 @@ import { initDatabase } from "./database.js";
 import { initStandingsListener } from "./standings.js";
 
 initAuthButton();
-checkAuth(true).then(level => {
+checkAuth('admin').then(level => {
     if (!level) return;
 
     // Need allPlayers so getPlayerColor works for deck owner labels.

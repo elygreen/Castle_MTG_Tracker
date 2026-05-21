@@ -258,11 +258,16 @@ h2 { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margi
 .history-deck-name { font-size: 0.9rem; font-weight: 700; }
 .history-stats { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: flex-end; max-width: 250px; }
 
-/* role-user hides restricted nav links */
-body.role-user .tab-btn[href="history.html"],
+/* (role-user has full nav access) */
+
+/* User — gray out Standings and Player Insight */
 body.role-user .tab-btn[href="standings.html"],
-body.role-user .tab-btn[href="insight.html"],
-body.role-user .tab-btn[href="database.html"] { display: none; }
+body.role-user .tab-btn[href="insight.html"] {
+    opacity: 0.35;
+    pointer-events: none;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
 
 .input-group { display: flex; gap: 10px; }
 input, select { background: #121416; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px; flex: 1; font-size: 13px; margin-bottom: 5px; transition: border-color 0.15s ease, box-shadow 0.15s ease; }

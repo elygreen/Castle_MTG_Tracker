@@ -17,7 +17,7 @@ import { initStandingsListener } from "./standings.js";
 import { initInsight, renderInsightTab } from "./player_insight.js";
 
 initAuthButton();
-checkAuth(true).then(level => {
+checkAuth('admin').then(level => {
     if (!level) return;
 
     // Players + decks both needed for insight rendering.

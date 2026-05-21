@@ -148,6 +148,13 @@ export async function initAuthButton() {
                 sessionStorage.removeItem('mtg_access_level');
                 window.location.reload();
             };
+        } else if (currentLevel === 'user') {
+            btn.textContent = '\u{1F513} User';
+            btn.style.cssText = 'position:absolute;top:0;right:0;background:rgba(76,175,80,0.15);color:#4caf50;border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:7px 14px;font-size:0.75rem;font-weight:800;cursor:pointer;letter-spacing:0.5px;';
+            btn.onclick = () => {
+                sessionStorage.removeItem('mtg_access_level');
+                window.location.reload();
+            };
         } else {
             btn.textContent = '\u{1F512} Login';
             btn.style.cssText = 'position:absolute;top:0;right:0;background:rgba(255,255,255,0.06);color:#8e9297;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:7px 14px;font-size:0.75rem;font-weight:800;cursor:pointer;letter-spacing:0.5px;';
@@ -183,7 +190,13 @@ export async function checkAuth(requireAdmin = false) {
     document.body.classList.remove('role-guest', 'role-user', 'role-admin');
     document.body.classList.add(`role-${level}`);
 
-    if (requireAdmin && level !== 'admin' && level !== 'user') {
+    // requireAdmin === 'admin' → strict admin-only (standings, insight)
+    // requireAdmin === true    → any logged-in user (database, history, record)
+    if (requireAdmin === 'admin' && level !== 'admin') {
+        window.location.replace('record.html');
+        return false;
+    }
+    if (requireAdmin === true && level !== 'admin' && level !== 'user') {
         window.location.replace('record.html');
         return false;
     }
