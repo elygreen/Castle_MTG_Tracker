@@ -152,11 +152,10 @@ export function renderInsightTab() {
                     Archidekt Profile
                 </a>` : ''}
             </div>
-            <!-- Stats + pie charts row -->
-            <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
-                <!-- Two-column stat grid -->
-                <div style="flex: 1; min-width: 300px; background: rgba(0,0,0,0.3); border-radius: 8px; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr;">
-                    ${[
+            <!-- Two independent stat columns -->
+            <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 16px;">
+                ${(() => {
+                    const stats = [
                         { label: 'Sol Ring',         value: playerStats.sol,         color: '#ffcc00' },
                         { label: 'First Blood',      value: playerStats.blood,        color: '#ff4444' },
                         { label: 'Most Ramp',        value: playerStats.ramp,         color: '#4caf50' },
@@ -168,27 +167,36 @@ export function renderInsightTab() {
                         { label: 'Snap Keep',        value: playerStats.snapkeep,     color: '#7c4dff' },
                         { label: 'Arch Enemy',       value: playerStats.archenemy,    color: '#e91e63' },
                         { label: 'Taken Out First',  value: playerStats.takenout,     color: '#546e7a' },
-                        null,
-                    ].map((s, i) => s ? `
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; background: ${Math.floor(i / 2) % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'};">
-                            <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${s.color}; flex-shrink: 0;"></span>
-                                <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); white-space: nowrap;">${s.label}</span>
+                    ];
+                    const half = Math.ceil(stats.length / 2);
+                    const col1 = stats.slice(0, half);
+                    const col2 = stats.slice(half);
+                    const renderRow = (s, i) => `
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; background: ${i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'};">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${s.color}; flex-shrink:0;"></span>
+                                <span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-dim); white-space:nowrap;">${s.label}</span>
                             </div>
-                            <span style="font-size: 1rem; font-weight: 900; color: var(--text-main); margin-left: 8px;">${s.value}</span>
+                            <span style="font-size:1rem; font-weight:900; color:var(--text-main); margin-left:8px;">${s.value}</span>
+                        </div>`;
+                    return `
+                        <div style="flex:1; min-width:200px; background:rgba(0,0,0,0.3); border-radius:8px; overflow:hidden;">
+                            ${col1.map(renderRow).join('')}
                         </div>
-                    ` : '<div style="background: rgba(255,255,255,0.02);"></div>').join('')}
+                        <div style="flex:1; min-width:200px; background:rgba(0,0,0,0.3); border-radius:8px; overflow:hidden;">
+                            ${col2.map(renderRow).join('')}
+                        </div>`;
+                })()}
+            </div>
+            <!-- Pie charts in their own row below -->
+            <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                    <label style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; font-weight:800; letter-spacing:1px;">Deck Color Identity</label>
+                    <div style="height: 140px; width: 150px; position: relative;"><canvas id="colorPieChart"></canvas></div>
                 </div>
-                <!-- Pie charts stacked on the right -->
-                <div style="display: flex; flex-direction: column; gap: 16px; min-width: 150px;">
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
-                        <label style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; font-weight:800; letter-spacing:1px;">Deck Color Identity</label>
-                        <div style="height: 140px; width: 150px; position: relative;"><canvas id="colorPieChart"></canvas></div>
-                    </div>
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
-                        <label style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; font-weight:800; letter-spacing:1px;">Play % Color Identity</label>
-                        <div style="height: 140px; width: 150px; position: relative;"><canvas id="playRatePieChart"></canvas></div>
-                    </div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                    <label style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; font-weight:800; letter-spacing:1px;">Play % Color Identity</label>
+                    <div style="height: 140px; width: 150px; position: relative;"><canvas id="playRatePieChart"></canvas></div>
                 </div>
             </div>
         </div>
