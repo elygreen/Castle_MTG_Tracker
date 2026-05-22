@@ -26,7 +26,7 @@ initAuthButton();
 checkAuth().then(level => _boot(level)).catch(console.error);
 
 function _boot(authLevel = 'guest') {
-    const canEdit = authLevel === 'admin' || authLevel === 'user';
+    canEdit = authLevel === 'admin' || authLevel === 'user';
     // We need allPlayers and allDecks populated so the record form works.
     // database.js owns the players snapshot; standings.js owns the decks snapshot.
     // We init both here purely for their data side-effects (no UI targets on this page).
@@ -76,6 +76,7 @@ function _boot(authLevel = 'guest') {
 // ---------------------------------------------------------------------------
 
 let initialPopulated = false;
+let canEdit = false;
 
 function _initRecordPage() {
     const addParticipantBtn = document.getElementById('addParticipantBtn');

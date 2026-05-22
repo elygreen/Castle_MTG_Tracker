@@ -508,7 +508,7 @@ button:active { filter: brightness(0.9); transform: translateY(0); box-shadow: n
     border: 1px solid var(--border);
     border-radius: 6px;
     overflow: hidden;
-    z-index: 100;
+    z-index: 200;
     box-shadow: 0 8px 24px rgba(0,0,0,0.5);
 }
 
@@ -567,7 +567,7 @@ button:active { filter: brightness(0.9); transform: translateY(0); box-shadow: n
     border: 1px solid var(--border);
     border-radius: 6px;
     overflow: hidden;
-    z-index: 100;
+    z-index: 200;
     box-shadow: 0 8px 24px rgba(0,0,0,0.5);
 }
 
@@ -967,7 +967,7 @@ body.role-guest #submitMatchBtn {
 /* Participant card commander art background */
 .participant-card-compact.has-commander-art {
     position: relative;
-    overflow: hidden;
+    /* overflow: hidden removed — it clips the deck/enjoyment dropdown menus */
 }
 .participant-card-compact.has-commander-art::before {
     content: "";
@@ -979,6 +979,7 @@ body.role-guest #submitMatchBtn {
     opacity: 0.18;
     z-index: 0;
     pointer-events: none;
+    border-radius: var(--radius);
     transition: opacity 0.3s ease;
 }
 .participant-card-compact.has-commander-art > * {

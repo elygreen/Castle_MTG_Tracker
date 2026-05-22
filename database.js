@@ -245,6 +245,7 @@ export function initDatabase(deps, { onPlayersUpdated = null, onAfterPlayersRend
 export function updateRosterView(playerName) {
     selectedRosterPlayer = playerName ?? selectedRosterPlayer;
     const rosterDeckView = document.getElementById('rosterDeckList');
+    if (!rosterDeckView) return;
     rosterDeckView.innerHTML = '';
 
     if (!selectedRosterPlayer) {
@@ -301,6 +302,7 @@ export function getSelectedRosterPlayer() { return selectedRosterPlayer; }
 
 function _syncPlayerSelect(players) {
     const playerSelect = document.getElementById('playerSelect');
+    if (!playerSelect) return;
     playerSelect.innerHTML = '<option value="" disabled selected>Owner...</option>';
     players.forEach(p => {
         playerSelect.innerHTML += `<option value="${p.name}" style="color:${p.color}; font-weight:800;">${p.name}</option>`;
